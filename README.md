@@ -12,6 +12,13 @@ dan simulasi lokasi part di unit berskala besar.
 - Konfirmasi atau koreksi hasil: foto temuan menjadi referensi part (di versi artifact/web mandiri).
 - Kasus nyata HD785 #512 (hose clamp) sebagai contoh validasi.
 
+## Model 3D unit (sekali unggah, tersimpan di repo)
+Buka Katalog > Model 3D, pilih unit, unggah `.glb`/`.gltf`/`.dae` beserta tekstur (atau satu `.zip`), lalu Simpan. File masuk ke `static/models/<unit>/` dan dimuat otomatis oleh semua pengguna di halaman Tracker. Di Streamlit Community Cloud disk tidak permanen, jadi **commit folder `static/models/` ke GitHub**. Model HD785-7 sudah disertakan di `static/models/hd785/`; periksa lisensi model Sketchfab tersebut sebelum repo dipublikasikan. Tekstur PBR dipasang otomatis dari nama file (`NamaMaterial_albedo.jpg`, `_normal`, `_roughness`, `_metallic`).
+Lokasi part pada model: klik "Set lokasi part" di Tracker untuk uji, lalu salin koordinat ke Katalog > Model 3D > Lokasi part agar permanen.
+
+## Tampilan
+Banner di bagian atas memakai foto `assets/hero.jpg`. Ganti file itu dengan foto lain (`.jpg` atau `.png`) bila perlu.
+
 ## Jalankan lokal
 ```bash
 pip install -r requirements.txt
