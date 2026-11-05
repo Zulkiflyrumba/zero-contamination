@@ -1,0 +1,925 @@
+<title>Contamination Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control-room console. Header + tabs, then 3 panes: input | 3D viewer + diagnostics | ranking. Viewer is always a dark instrument screen. */
+:root{
+  --bg:#101916;--bg2:#0c1411;--panel:#17221e;--panel2:#1e2c27;--line:#2a3a33;--fg:#e4eee9;--muted:#8fa69b;
+  --accent:#5fcba0;--accent-ink:#0b1f17;--accent-soft:#1f3a30;--scan:#5fd0c4;--ok:#5fcba0;--warn:#e3b45c;--bad:#ef8a7c;
+  --vp:#0e1b17;--vp-line:#1c2d27;--shadow:0 10px 34px rgba(0,0,0,.35);--rail:#0c1411;--rail-fg:#8fa69b;--rail-on:#5fcba0;
+  --f-display:'Plus Jakarta Sans',system-ui,sans-serif;--f-body:'Plus Jakarta Sans',system-ui,sans-serif;--f-mono:'DM Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#e7eee9;--bg2:#f4f7f5;--panel:#ffffff;--panel2:#f2f6f3;--line:#e2eae5;--fg:#2a3a35;--muted:#7d8e87;
+  --accent:#2f9a73;--accent-ink:#ffffff;--accent-soft:#dff1e8;--scan:#2aa597;--ok:#2f9a73;--warn:#c98a24;--bad:#cf5f51;
+  --shadow:0 10px 30px rgba(52,86,70,.10);--rail:#233f35;--rail-fg:#a9c2b7;--rail-on:#ffffff;color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#e7eee9;--bg2:#f4f7f5;--panel:#ffffff;--panel2:#f2f6f3;--line:#e2eae5;--fg:#2a3a35;--muted:#7d8e87;
+  --accent:#2f9a73;--accent-ink:#ffffff;--accent-soft:#dff1e8;--scan:#2aa597;--ok:#2f9a73;--warn:#c98a24;--bad:#cf5f51;
+  --shadow:0 10px 30px rgba(52,86,70,.10);--rail:#233f35;--rail-fg:#a9c2b7;--rail-on:#ffffff;color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--f-body);padding-block:0 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1500px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none}
+h1{font:700 20px/1.1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;margin:0}
+.sub{font:400 11px var(--f-mono);color:var(--muted);letter-spacing:.04em;margin-top:3px}
+nav{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);padding:3px}
+nav button{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;border:0;background:none;color:var(--muted);padding:8px 16px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--scan);outline-offset:2px}
+.grid{display:grid;gap:16px;margin-top:16px;grid-template-columns:minmax(260px,320px) minmax(0,1fr) minmax(260px,340px);align-items:start}
+@media (max-width:1100px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.grid .mid{grid-column:1/-1;order:-1}}
+@media (max-width:700px){.grid{grid-template-columns:minmax(0,1fr)}.grid .mid{order:0;grid-column:auto}.hud.bl,.hud.br{display:none}}
+.card{background:var(--panel);border:1px solid var(--line);min-width:0}
+.card>h2,.ph{margin:0;padding:10px 14px;border-bottom:1px solid var(--line);font:600 12px var(--f-display);letter-spacing:.1em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ph small{font:400 10px var(--f-mono);color:var(--muted);letter-spacing:.03em;text-transform:none}
+.body{padding:14px;display:flex;flex-direction:column;gap:12px}
+label{display:flex;flex-direction:column;gap:4px;font:500 11px var(--f-mono);color:var(--muted);letter-spacing:.04em;text-transform:uppercase;min-width:0}
+input,select,textarea{font:14px var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);padding:8px 10px;width:100%;min-width:0;border-radius:0}
+textarea{resize:vertical;min-height:60px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{font:600 12px var(--f-display);letter-spacing:.09em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel2);color:var(--fg);padding:10px 14px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.sm{padding:6px 10px;font-size:11px}
+.drop{border:1px dashed var(--muted);padding:16px;text-align:center;color:var(--muted);cursor:pointer;font-size:13px}
+.drop.over{border-color:var(--accent);color:var(--fg)}
+.angles{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.ang{position:relative;aspect-ratio:1;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.ang img{width:100%;height:100%;object-fit:cover;display:block}
+.ang span{position:absolute;left:0;bottom:0;right:0;font:400 9px var(--f-mono);background:rgba(0,0,0,.65);color:#fff;padding:1px 4px}
+.ang b{position:absolute;top:2px;right:2px;width:18px;height:18px;background:rgba(0,0,0,.7);color:#fff;font:600 11px/18px var(--f-mono);text-align:center;cursor:pointer}
+.hint{font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 11px var(--f-mono);padding:3px 8px;border:1px solid var(--line);color:var(--muted);background:var(--bg)}
+.chip.on{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.chip.bad{color:var(--bad);border-color:var(--bad)}.chip.ok{color:var(--ok);border-color:var(--ok)}.chip.warn{color:var(--warn);border-color:var(--warn)}
+/* viewer */
+.vp{position:relative;background:var(--vp);border-bottom:1px solid var(--line);height:min(58vh,520px);min-height:340px;overflow:hidden}
+.vp canvas{display:block;width:100%;height:100%}
+.vp .hud{position:absolute;font:400 10px var(--f-mono);color:#7fa0b3;letter-spacing:.06em;pointer-events:none;text-transform:uppercase}
+.hud.tl{top:10px;left:12px}.hud.tr{top:10px;right:12px;text-align:right}.hud.bl{bottom:58px;left:12px}.hud.br{bottom:58px;right:12px;text-align:right}
+.vp .ctl{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:4px;flex-wrap:wrap;justify-content:center;width:calc(100% - 24px)}
+.vp .ctl button{font:600 11px var(--f-display);letter-spacing:.08em;text-transform:uppercase;background:rgba(8,11,14,.8);border:1px solid #2a3a47;color:#cfe3ee;padding:7px 11px;cursor:pointer}
+.vp .ctl button.on{background:var(--scan);color:#04181c;border-color:var(--scan)}
+.vp .ctl button:hover{border-color:#6fb6c8}
+.prog{position:absolute;left:12px;right:12px;bottom:54px;height:3px;background:#16212a}
+.prog i{display:block;height:100%;width:0;background:var(--scan)}
+.stage{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:#7fa0b3;font:400 12px var(--f-mono);text-align:center;padding:24px}
+.stage.show{display:flex}
+.stage b{font:600 14px var(--f-display);letter-spacing:.1em;color:#cfe3ee;text-transform:uppercase}
+.diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line)}
+.diag>div{background:var(--panel);padding:12px 14px;min-width:0}
+.diag dt{font:500 10px var(--f-mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.diag dd{margin:0;font-size:14px;overflow-wrap:anywhere}
+.big{font:700 26px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.meter{height:6px;background:var(--bg);margin-top:6px;border:1px solid var(--line)}
+.meter i{display:block;height:100%}
+.alert{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.alert strong{font:700 16px var(--f-display);letter-spacing:.03em}
+/* ranking */
+.rank{display:flex;flex-direction:column}
+.rk{display:grid;grid-template-columns:28px 56px 1fr;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;align-items:center;background:none;border-left:0;border-right:0;border-top:0;color:inherit;text-align:left;font:inherit;width:100%}
+.rk:hover{background:var(--panel2)}.rk[aria-current="true"]{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
+.rk .n{font:700 14px var(--f-display);color:var(--muted);font-variant-numeric:tabular-nums}
+.rk img{width:56px;height:56px;object-fit:cover;background:var(--vp);display:block}
+.rk .t{min-width:0;position:relative}.rk .t b{display:block;font-weight:600;overflow-wrap:anywhere;padding-right:40px}.rk .t span{font:400 11px var(--f-mono);color:var(--muted);display:block;overflow-wrap:anywhere}
+.rk .bar{height:4px;background:var(--bg);margin-top:5px;border:1px solid var(--line)}.rk .bar i{display:block;height:100%;background:var(--accent)}
+.rk .sc{font:600 12px var(--f-mono);position:absolute;right:0;top:0;font-variant-numeric:tabular-nums}
+.uwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,340px)}@media (max-width:900px){.uwrap{grid-template-columns:minmax(0,1fr)}}
+.ulabel{position:absolute;left:0;top:0;display:none;pointer-events:none;background:var(--accent);color:var(--accent-ink);padding:5px 9px;font:500 11px var(--f-mono);white-space:nowrap;z-index:3}.ulabel b{display:block;font:700 12px var(--f-display);letter-spacing:.04em}.ulabel span{opacity:.85}.ulabel::after{content:"";position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-top-color:var(--accent);border-bottom:0}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
+.empty b{display:block;font:600 13px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--fg);margin-bottom:4px}
+/* database */
+.dbgrid{display:grid;gap:16px;margin-top:16px;grid-template-columns:minmax(240px,300px) minmax(0,1fr);align-items:start}
+@media (max-width:900px){.dbgrid{grid-template-columns:minmax(0,1fr)}}
+.ulist{display:flex;flex-direction:column}
+.ulist button{display:flex;justify-content:space-between;gap:8px;padding:10px 14px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer}
+.ulist button[aria-current="true"]{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
+.ulist small{font:400 11px var(--f-mono);color:var(--muted)}
+.ugrp{padding:8px 14px;font:600 10px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--panel2);border-bottom:1px solid var(--line)}
+details.sys{border-bottom:1px solid var(--line)}details.sys>summary{padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font:600 13px var(--f-display);letter-spacing:.05em;text-transform:uppercase;list-style:none}details>summary::-webkit-details-marker{display:none}details.sys>summary small,details.asm>summary small{font:400 11px var(--f-mono);color:var(--muted);text-transform:none;letter-spacing:0}
+details.sys[open]>summary{background:var(--panel2)}details.asm{margin-left:14px;border-left:2px solid var(--line)}details.asm>summary{padding:9px 14px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;font-weight:600;list-style:none}details.asm .scroll{padding:0 14px 12px}
+.parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;padding:14px}
+.pc{background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.pc img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--vp)}
+.pc .i{padding:10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.pc b{font-weight:600;overflow-wrap:anywhere}.pc small{font:400 11px var(--f-mono);color:var(--muted);overflow-wrap:anywhere}
+.pc .a{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.hist{width:100%;border-collapse:collapse;font-size:12px}
+.hist th{font:500 10px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.hist td{padding:6px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto;z-index:50}
+.modal.show{display:flex}
+.modal .card{width:min(640px,100%);margin:auto}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;font:500 13px var(--f-mono);z-index:60;max-width:90vw}
+.note{font:400 11px var(--f-mono);color:var(--muted);margin-top:14px;line-height:1.6}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ===== soft theme: pale sage surfaces, white rounded cards, pill controls, dark-green icon rail ===== */
+body{background-color:var(--bg);background-image:linear-gradient(160deg,var(--bg),var(--bg2));background-attachment:fixed}
+@media (min-width:900px){body{padding-left:calc(100px + env(safe-area-inset-left,0px))}}
+header{border-bottom:0;padding:24px 0 4px}
+h1{font:700 22px/1.15 var(--f-display);letter-spacing:-.01em;text-transform:none}
+.sub{font:400 12px var(--f-body);letter-spacing:0;color:var(--muted);margin-top:4px}
+.card{border-radius:22px;box-shadow:var(--shadow);overflow:hidden;border-color:var(--line)}
+.card>h2,.ph{padding:15px 20px;font:600 14px var(--f-display);letter-spacing:0;text-transform:none}
+.ph small{font:400 11px var(--f-body);letter-spacing:0}
+.body{padding:18px 20px}
+label{font:500 12px var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
+input,select,textarea{background:var(--panel2);border:1px solid transparent;border-radius:12px;padding:10px 12px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.btn{font:600 13px var(--f-display);letter-spacing:0;text-transform:none;border:0;border-radius:999px;background:var(--accent-soft);color:var(--accent);padding:10px 20px}
+.btn:hover{filter:brightness(.97);border:0}
+.btn.pri{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 30%,transparent)}
+.btn.sm{padding:6px 14px;font-size:12px}
+.chip{border:0;border-radius:999px;background:var(--panel2);padding:4px 11px;font:500 11px var(--f-body)}
+.chip.on{background:var(--accent);color:var(--accent-ink)}
+.chip.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}.chip.warn{background:color-mix(in srgb,var(--warn) 17%,transparent);color:var(--warn)}.chip.bad{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.drop{border-radius:16px;border-color:color-mix(in srgb,var(--muted) 45%,transparent);background:var(--panel2)}
+.ang{border-radius:12px;border-color:transparent}
+.vp .ctl button{border-radius:999px;letter-spacing:0;text-transform:none;font:600 12px var(--f-display);padding:8px 14px;background:rgba(16,32,27,.72);border-color:rgba(255,255,255,.12)}
+.vp .ctl button.on{background:var(--scan);color:#06201b}
+.hud{font-family:var(--f-mono)}
+.rk{padding:12px 18px}.rk img{border-radius:12px}.rk .bar{border:0;border-radius:99px;background:var(--panel2)}.rk .bar i{border-radius:99px}
+.rk[aria-current="true"]{background:var(--accent-soft)}
+.alert{padding:14px 20px}
+.diag{background:var(--line)}.diag dt{font:500 12px var(--f-body);letter-spacing:0;text-transform:none}
+.big{font:700 26px/1 var(--f-display)}
+.meter{border:0;border-radius:99px;background:var(--panel2);overflow:hidden}
+.hist th{font:500 11px var(--f-body);letter-spacing:0;text-transform:none}
+.ugrp{font:600 11px var(--f-body);letter-spacing:.04em}
+details.sys>summary{font:600 14px var(--f-display);letter-spacing:0;text-transform:none}
+.ulist button[aria-current="true"],.rk[aria-current="true"]{box-shadow:inset 3px 0 0 var(--accent)}
+.ulabel{border-radius:10px}
+.toast{border-radius:999px;padding:11px 20px;box-shadow:var(--shadow)}
+.note{font:400 12px/1.6 var(--f-body);color:var(--muted)}
+.modal .card{border-radius:24px}
+nav.rail{position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:16px;bottom:16px;width:68px;background:var(--rail);border:0;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;padding:22px 0;z-index:30;box-shadow:var(--shadow)}
+nav.rail .logo{margin-bottom:14px}
+nav.rail button{width:46px;height:46px;border-radius:15px;padding:0;display:grid;place-items:center;background:none;color:var(--rail-fg);text-transform:none;letter-spacing:0}
+nav.rail button:hover{background:rgba(255,255,255,.08)}
+nav.rail button[aria-selected="true"]{background:rgba(255,255,255,.16);color:var(--rail-on)}
+nav.rail button svg{width:22px;height:22px}
+nav.rail .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:899px){nav.rail{top:auto;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto;height:64px;flex-direction:row;justify-content:space-around;padding:8px 14px;border-radius:26px}nav.rail .logo{display:none}body{padding-bottom:100px}}
+</style>
+<style>body.embed nav.rail,body.embed #v-database,body.embed #v-kasus,body.embed .note{display:none!important}body.embed{padding-block:0 8px}</style>
+<div class="wrap">
+<header>
+  <div class="brand">
+    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true"><path d="M19 2 34 10.5v17L19 36 4 27.5v-17L19 2Z" stroke="var(--accent)" stroke-width="2"/><path d="M19 2v34M4 10.5l30 17M34 10.5 4 27.5" stroke="var(--scan)" stroke-width="1" opacity=".6"/><circle cx="19" cy="19" r="4" fill="var(--accent)"/></svg>
+    <div><h1>Contamination Tracker</h1><div class="sub">Telusuri sumber kontaminan di PIT dan ROM dari foto temuan</div></div>
+  </div>
+  <nav class="rail" role="tablist" aria-label="Tampilan"><svg class="logo" width="30" height="30" viewBox="0 0 38 38" fill="none" aria-hidden="true"><path d="M19 2 34 10.5v17L19 36 4 27.5v-17L19 2Z" stroke="currentColor" stroke-width="2.2" style="color:var(--rail-on)"/><circle cx="19" cy="19" r="4.5" fill="currentColor" style="color:var(--rail-on)"/></svg><button role="tab" id="tab-analisis" aria-selected="true" data-view="analisis" title="Analisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><span class="lbl">Analisis</span></button><button role="tab" id="tab-database" aria-selected="false" data-view="database" title="Basis Data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg><span class="lbl">Basis Data</span></button><button role="tab" id="tab-kasus" aria-selected="false" data-view="kasus" title="Kasus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5h6M9 11h6M9 15h4"/></svg><span class="lbl">Kasus</span></button></nav>
+</header>
+
+<section id="v-analisis" class="grid">
+  <aside class="card">
+    <h2>1 · Input temuan</h2>
+    <div class="body">
+      <div class="row2">
+        <label>Lokasi<select id="f-loc"><option>PIT Tutupan A</option><option>PIT Tutupan B</option><option>ROM 1</option><option>ROM 2</option><option>Hauling KM 7</option></select></label>
+        <label>Jenis<select id="f-type"><option value="metal">Logam</option><option value="nonmetal">Non-logam</option><option value="">Belum tahu</option></select></label>
+      </div>
+      <div class="row2">
+        <label>Ukuran (mm)<input id="f-size" type="number" min="1" max="3000" placeholder="mis. 180"></label>
+        <label>Tanggal<input id="f-date" type="date"></label>
+      </div>
+      <div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Unggah foto temuan">Tarik foto ke sini atau tekan untuk memilih.<br><span class="hint">1 sudut cukup. Tambah sudut lain untuk hasil lebih tajam.</span></div>
+        <input type="file" id="file" accept="image/*" multiple hidden>
+      </div>
+      <div class="angles" id="angles"></div>
+      <div class="hint" id="angHint">Belum ada foto. Coba contoh temuan di bawah.</div>
+      <button class="btn pri" id="run" disabled>Lacak sumber</button>
+      <div>
+        <div class="hint" style="margin-bottom:6px">Contoh temuan (foto dummy, dibuat otomatis):</div>
+        <div class="chips" id="samples"></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="card mid">
+    <div class="ph"><span id="vtitle">2 · Rekonstruksi 3D</span><small id="vmeta">menunggu input</small></div>
+    <div class="vp" id="vp">
+      <div class="hud tl" id="hudTL">MODE: IDLE</div>
+      <div class="hud tr" id="hudTR"></div>
+      <div class="hud bl" id="hudBL"></div>
+      <div class="hud br" id="hudBR"></div>
+      <div class="stage show" id="stage"><b>Belum ada objek</b>Pilih contoh temuan atau unggah foto,<br>lalu tekan Lacak sumber.</div>
+      <div class="prog" id="prog"><i></i></div>
+      <div class="ctl">
+        <button data-m="scan" class="on">Scan</button>
+        <button data-m="recon">Rekonstruksi</button>
+        <button data-m="real">Realistis</button>
+        <button data-m="ref">Overlay referensi</button>
+        <button data-m="spin" class="on">Putar</button>
+      </div>
+    </div>
+    <div class="alert" id="alert" hidden></div>
+    <dl class="diag" id="diag"></dl>
+  </main>
+
+  <aside class="card">
+    <h2>3 · Peringkat kemiripan</h2>
+    <div class="rank" id="rank"><div class="empty"><b>Belum ada hasil</b>Peringkat part dan unit muncul di sini.</div></div>
+    <h2 style="border-top:1px solid var(--line)">4 · Telusuri nomor lambung</h2>
+    <div id="lb"><div class="empty"><b>Belum ada hasil</b>Kandidat nomor lambung muncul setelah analisis.</div></div>
+  </aside>
+  <section class="card" id="unitSec" hidden style="grid-column:1/-1">
+    <div class="ph"><span>5 · Simulasi lokasi di unit</span><small id="uMeta"></small></div>
+    <div class="uwrap">
+      <div class="vp" id="uvp" style="border-bottom:0;height:min(64vh,560px)">
+        <div class="hud tl" id="uHud">MODE: ORBIT BEBAS</div><div class="hud tr" id="uHudR"></div>
+        <div class="ulabel" id="ulabel"></div>
+        <div class="prog" id="uprog"><i></i></div>
+        <div class="ctl"><button data-u="play">Simulasikan ke unit</button><button data-u="xray">Tembus pandang</button><button data-u="spin" class="on">Putar</button></div>
+      </div>
+      <div class="body"><div id="uinfoPane"></div><div id="cmPane" class="cm"></div></div>
+    </div>
+  </section>
+</section>
+
+<section id="v-database" class="dbgrid" hidden>
+  <aside class="card">
+    <div class="ph"><span>Unit</span><button class="btn sm" id="addUnit">Tambah</button></div>
+    <div class="ulist" id="ulist"></div>
+  </aside>
+  <main class="card">
+    <div class="ph"><span id="dbTitle">Part</span><button class="btn sm pri" id="addPart">Tambah part</button></div>
+    <div id="uinfo" class="body" style="border-bottom:1px solid var(--line)"></div>
+    <div class="body" style="flex-direction:row;flex-wrap:wrap;align-items:end;border-bottom:1px solid var(--line)"><label style="flex:1 1 220px">Cari part<input id="dbq" type="search" placeholder="nama, nomor part, sistem, material"></label><label style="flex-direction:row;align-items:center;gap:8px;text-transform:none"><input id="dbfm" type="checkbox" style="width:auto"> hanya kandidat kontaminan</label><button class="btn sm" id="dbexp">Buka semua</button><small class="hint" id="dbCount"></small></div>
+    <div id="parts"></div>
+  </main>
+</section>
+<section id="v-kasus" hidden style="margin-top:16px"><div class="card"><div class="ph"><span>Riwayat kasus kontaminasi</span><small id="kCount"></small></div><div id="kList"></div></div></section>
+<p class="note">Prototipe. Foto referensi dan temuan di sini dibuat otomatis dari model 3D sederhana, kecuali foto kasus nyata HD785 #512. Kemiripan dihitung dari warna, bentuk siluet, rasio ukuran, dan konteks lokasi, jadi hasilnya berupa kandidat berperingkat untuk dikonfirmasi tim QC, bukan kepastian. Data tersimpan di browser ini, dan di basis data bersama bila tersedia.</p>
+</div>
+
+<div class="modal" id="modal"><div class="card"><div class="ph"><span id="mTitle">Form</span><button class="btn sm" id="mClose">Tutup</button></div><div class="body" id="mBody"></div></div></div>
+<div class="toast" id="toast" hidden></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script>window.CT_BOOT=__CT_BOOT__;</script><script>
+/* ===== DATA DARI DATABASE (Streamlit) ===== */
+const CT=window.CT_BOOT;
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+const KIND_LABEL=CT.kind_label,KINDS=Object.keys(KIND_LABEL);
+const UNITS0=CT.units,PARTS0=CT.parts,SPEC=CT.spec,FLEET0=CT.fleet,AREA_UNITS=CT.area_units;
+const CASES0=CT.cases.map(c=>Object.assign({},c,{builtin:true}));
+const CASE_FIND=CT.sample.find;
+const CASE_REF=((PARTS0.find(p=>p.photos&&p.photos.length&&CT.cases.some(c=>c.partId===p.id))||{}).photos)||[];
+const CT_INSPECT=CT.inspect||{};
+function lambungOf(unitId){const f=FLEET0[unitId];if(f)return Array.from({length:f[1]},(_,i)=>String(f[0]+i));
+  const u=(UNITS.find(x=>x.id===unitId)||{});return Array.from({length:Math.min(40,u.fleet||0)},(_,i)=>String(900+i))}
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0)}
+function areaOf(unitId,no,date){const real=CT.ops&&CT.ops[no+'|'+date];if(real!==undefined)return real||null;
+  const areas=Object.keys(AREA_UNITS).filter(a=>AREA_UNITS[a].includes(unitId));if(!areas.length)return null;
+  const h=hashStr(no+'|'+date);if(h%9===0)return null;return areas[(h>>3)%areas.length]}
+function operatingIn(unitId,no,loc,date){return areaOf(unitId,no,date)===loc}
+document.body.classList.add('embed');
+/* ===== GEOMETRI PROSEDURAL ===== */
+function hash3(x,y,z){let h=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453;return h-Math.floor(h)}
+function vnoise(x,y,z){const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z),xf=x-xi,yf=y-yi,zf=z-zi;
+  const s=t=>t*t*(3-2*t);let r=0;
+  for(let a=0;a<2;a++)for(let b=0;b<2;b++)for(let c=0;c<2;c++){const w=(a?s(xf):1-s(xf))*(b?s(yf):1-s(yf))*(c?s(zf):1-s(zf));r+=w*hash3(xi+a,yi+b,zi+c)}return r}
+function fbm(x,y,z){return vnoise(x,y,z)*.55+vnoise(x*2.1,y*2.1,z*2.1)*.3+vnoise(x*4.3,y*4.3,z*4.3)*.15}
+const T=THREE;
+function shapeRect(w,h,r){const s=new T.Shape();const x=-w/2,y=-h/2;r=Math.min(r,w/2,h/2);
+  s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);s.lineTo(x+w,y+h-r);s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  s.lineTo(x+r,y+h);s.quadraticCurveTo(x,y+h,x,y+h-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);return s}
+function holeAt(shape,cx,cy,r){const h=new T.Path();h.absarc(cx,cy,r,0,Math.PI*2,true);shape.holes.push(h)}
+function rotG(g,x,y,z){g.rotateX(x||0);g.rotateY(y||0);g.rotateZ(z||0);return g}
+function trans(g,x,y,z){g.translate(x||0,y||0,z||0);return g}
+/* spec: {g:geometry, m:'steel'|'dark'|'rubber'|'chrome'|'wire', w:wearScale} */
+function specsFor(kind){
+  const S=[];
+  switch(kind){
+  case 'tooth':{
+    const b=new T.CylinderGeometry(.16,.62,1.9,4,10,false);b.rotateY(Math.PI/4);b.scale(1,1,.72);S.push({g:b,m:'steel',w:1});
+    const k=new T.BoxGeometry(.9,.75,.9);trans(k,0,-1.15,0);S.push({g:k,m:'steel',w:.6});
+    const p=new T.CylinderGeometry(.11,.11,1.1,14);rotG(p,0,0,Math.PI/2);trans(p,0,-1.2,0);S.push({g:p,m:'dark',w:.2});
+    const r=new T.BoxGeometry(.22,1.3,.5);trans(r,0,.1,.32);S.push({g:r,m:'steel',w:.5});break}
+  case 'shroud':{
+    const s=shapeRect(2,1.3,.25);holeAt(s,-.55,0,.14);holeAt(s,.55,0,.14);
+    const g=new T.ExtrudeGeometry(s,{depth:.35,bevelEnabled:true,bevelSize:.06,bevelThickness:.06,bevelSegments:2,curveSegments:10});g.translate(0,0,-.17);S.push({g,m:'steel',w:1});
+    const ri=new T.BoxGeometry(1.7,.14,.3);trans(ri,0,.45,.3);S.push({g:ri,m:'steel',w:.8});break}
+  case 'bolt':{
+    const sh=new T.CylinderGeometry(.19,.19,1.6,18);trans(sh,0,-.7,0);S.push({g:sh,m:'steel',w:1});
+    const hd=new T.CylinderGeometry(.42,.42,.36,6);trans(hd,0,.28,0);S.push({g:hd,m:'steel',w:1});
+    for(let i=0;i<9;i++){const t=new T.TorusGeometry(.195,.028,6,20);rotG(t,Math.PI/2);trans(t,0,-1.3+i*.13,0);S.push({g:t,m:'steel',w:.4})}break}
+  case 'trackshoe':{
+    const b=new T.BoxGeometry(2.1,.16,.8,10,1,4);S.push({g:b,m:'steel',w:1});
+    for(let i=-1;i<=1;i++){const gr=new T.BoxGeometry(2.1,.2,.14,8,1,1);trans(gr,0,.16,i*.28);S.push({g:gr,m:'steel',w:1.2})}
+    for(let i=0;i<4;i++){const h=new T.CylinderGeometry(.07,.07,.2,12);trans(h,-.8+i*.53,0,i%2?.28:-.28);S.push({g:h,m:'dark',w:0})}break}
+  case 'pin':{
+    const pts=[[.0,-1],[.29,-1],[.32,-.94],[.32,.94],[.29,1],[0,1]].map(p=>new T.Vector2(p[0],p[1]));
+    S.push({g:new T.LatheGeometry(pts,28),m:'chrome',w:1});
+    const gr=new T.TorusGeometry(.325,.03,8,24);rotG(gr,Math.PI/2);trans(gr,0,.5,0);S.push({g:gr,m:'dark',w:0});
+    const h=new T.CylinderGeometry(.08,.08,.7,10);rotG(h,0,0,Math.PI/2);trans(h,0,-.7,0);S.push({g:h,m:'dark',w:0});break}
+  case 'liner':{
+    const s=shapeRect(2,1.4,.12);holeAt(s,-.7,.0,.12);holeAt(s,.7,0,.12);
+    const g=new T.ExtrudeGeometry(s,{depth:.12,bevelEnabled:true,bevelSize:.03,bevelThickness:.03,bevelSegments:1});S.push({g,m:'steel',w:1});
+    for(let i=-2;i<=2;i++){const r=new T.BoxGeometry(2,.05,.06);trans(r,0,i*.25,.19);S.push({g:r,m:'steel',w:.7})}break}
+  case 'hose':{
+    const c=new T.CatmullRomCurve3([new T.Vector3(-1.1,-.2,0),new T.Vector3(-.5,.35,.2),new T.Vector3(.2,-.1,-.2),new T.Vector3(.8,.4,.1),new T.Vector3(1.15,.1,0)]);
+    S.push({g:new T.TubeGeometry(c,48,.17,14,false),m:'rubber',w:1.6});
+    const f=new T.CylinderGeometry(.24,.24,.4,14);rotG(f,0,0,Math.PI/2);trans(f,-1.2,-.2,0);S.push({g:f,m:'steel',w:.4});
+    const f2=new T.CylinderGeometry(.19,.19,.22,14);rotG(f2,0,0,Math.PI/2);trans(f2,-1.45,-.2,0);S.push({g:f2,m:'steel',w:.4});
+    for(let i=0;i<7;i++){const w=new T.CylinderGeometry(.012,.012,.38,5);rotG(w,0,0,Math.PI/2+(i-3)*.12);trans(w,1.18,.1+(i-3)*.045,(i%3-1)*.05);S.push({g:w,m:'wire',w:0})}break}
+  case 'tire':{
+    const b=new T.IcosahedronGeometry(1,4);b.scale(1.2,.55,.85);S.push({g:b,m:'rubber',w:2.6});
+    for(let i=0;i<5;i++){const l=new T.BoxGeometry(.26,.2,.9);trans(l,-.8+i*.4,.5,0);S.push({g:l,m:'rubber',w:1.5})}
+    for(let i=0;i<9;i++){const w=new T.CylinderGeometry(.014,.014,.55+rnd()*.3,5);rotG(w,rnd()*.8-.4,0,rnd()*.8-.4+Math.PI/2.4);trans(w,-.7+rnd()*1.4,-.25+rnd()*.2,-.3+rnd()*.6);S.push({g:w,m:'wire',w:0})}break}
+  case 'edge':{
+    const s=new T.Shape();s.moveTo(-1.1,-.18);s.lineTo(1.1,-.18);s.lineTo(1.1,.18);s.lineTo(-1.1,.18);s.lineTo(-1.1,-.18);
+    [-.7,0,.7].forEach(x=>holeAt(s,x,0,.07));
+    const g=new T.ExtrudeGeometry(s,{depth:.1,bevelEnabled:true,bevelSize:.02,bevelThickness:.02,bevelSegments:1});S.push({g,m:'steel',w:1});
+    const bv=new T.BoxGeometry(2.2,.04,.18);trans(bv,0,-.17,.07);S.push({g:bv,m:'steel',w:.5});break}
+  case 'clamp':{
+    const sh=new T.CylinderGeometry(1,1,1.7,36,1,true,-.95,1.9);S.push({g:sh,m:'steel',w:1.4});
+    const bl=new T.BoxGeometry(.62,.95,.5);trans(bl,0,0,1.22);S.push({g:bl,m:'steel',w:.7});
+    [-.26,.26].forEach(y=>{const h=new T.CylinderGeometry(.14,.14,.54,16);rotG(h,Math.PI/2);trans(h,0,y,1.22);S.push({g:h,m:'dark',w:0})});
+    break}
+  case 'rod':{
+    const pts=[[0,-1],[.2,-1],[.2,.78],[.13,.8],[.13,1],[0,1]].map(p=>new T.Vector2(p[0],p[1]));
+    S.push({g:new T.LatheGeometry(pts,28),m:'chrome',w:1});
+    const n=new T.CylinderGeometry(.19,.19,.12,6);trans(n,0,.92,0);S.push({g:n,m:'steel',w:.3});break}
+  default:{S.push({g:new T.IcosahedronGeometry(.8,2),m:'steel',w:1})}}
+  return S}
+/* worn finding / pristine reference */
+const MATS={
+  steel:{metal:.85,rough:.42},chrome:{metal:1,rough:.18},dark:{metal:.4,rough:.7},rubber:{metal:0,rough:.92},wire:{metal:.95,rough:.35}};
+function paint(g,base,wear,mud,sd,wscale){
+  const pos=g.attributes.position,col=new Float32Array(pos.count*3);const b=new T.Color(base).multiplyScalar(base==='#1b1d1f'||base==='#16181a'?1:1.5),rust=new T.Color('#8f4a22'),dirt=new T.Color('#6b5a43'),shine=new T.Color('#c9cdd1');
+  const c=new T.Color();
+  for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    const n=fbm(x*3+sd,y*3,z*3),n2=fbm(x*7,y*7+sd,z*7);
+    c.copy(b);
+    if(wear>0){c.lerp(rust,Math.min(1,Math.max(0,(n-.38)*2.4)*wear*.8*(wscale>0?1:.2)));
+      c.lerp(shine,Math.max(0,(n2-.62)*2.2)*wear*.5*(wscale>0?1:0))}
+    if(mud>0)c.lerp(dirt,Math.min(1,Math.max(0,(fbm(x*2.2,y*2.2,z*2.2+sd)-.3)*2.3)*mud));
+    col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b}
+  g.setAttribute('color',new T.BufferAttribute(col,3))}
+function wearGeo(g,wear,sd,ws){
+  g=g.index?g.toNonIndexed():g;g=g.clone();
+  if(wear>0&&ws>0){g.computeVertexNormals();const p=g.attributes.position,n=g.attributes.normal;
+    for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+      const d=(fbm(x*2.6+sd,y*2.6,z*2.6)-.5)*.2*wear*ws+(fbm(x*9,y*9,z*9+sd)-.5)*.05*wear*ws;
+      p.setXYZ(i,x+n.getX(i)*d,y+n.getY(i)*d,z+n.getZ(i)*d)}}
+  g.computeVertexNormals();return g}
+function buildObject(kind,opt){
+  opt=Object.assign({wear:0,mud:0,seed:1,color:'#5d636a'},opt);
+  const grp=new T.Group(),inner=new T.Group();grp.add(inner);
+  const specs=specsFor(kind);
+  const parts=specs.map(s=>{const g=wearGeo(s.g,opt.wear,opt.seed,s.w);const base=s.m==='rubber'?'#1b1d1f':s.m==='dark'?'#16181a':s.m==='wire'?'#b9bdc2':s.m==='chrome'?'#9aa0a7':opt.color;
+    paint(g,base,opt.wear,opt.mud,opt.seed,s.w);return {g,m:s.m}});
+  inner.userData.parts=parts;return {grp,inner,parts}}
+function solidMats(parts,extra){return parts.map(p=>{const d=MATS[p.m];return new T.MeshStandardMaterial(Object.assign({vertexColors:true,metalness:d.metal,roughness:d.rough,side:T.DoubleSide},extra||{}))})}
+/* ===== ENV + LIGHT + THUMBNAIL ===== */
+function envTexture(){const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,128);g.addColorStop(0,'#cfe4f2');g.addColorStop(.45,'#8296a5');g.addColorStop(.5,'#3a4148');g.addColorStop(1,'#15181b');x.fillStyle=g;x.fillRect(0,0,256,128);
+  x.fillStyle='#fff';x.fillRect(40,18,40,14);x.fillRect(170,26,30,10);
+  const t=new T.CanvasTexture(c);t.mapping=T.EquirectangularReflectionMapping;return t}
+function setupEnv(renderer,scene){try{if(!renderer._env){const p=new T.PMREMGenerator(renderer);renderer._env=p.fromEquirectangular(envTexture()).texture;p.dispose()}scene.environment=renderer._env}catch(e){}}
+function addLights(scene){scene.add(new T.HemisphereLight(0xcfe3f0,0x2a2620,.7));const d=new T.DirectionalLight(0xffffff,1.5);d.position.set(3,5,4);scene.add(d);const r=new T.DirectionalLight(0x7fb6ff,.6);r.position.set(-4,2,-3);scene.add(r)}
+const POSE={tooth:[0,.15,0],pin:[.9,0,.3],rod:[.2,0,.9],bolt:[0,0,.5],trackshoe:[.35,0,0],hose:[0,0,0],liner:[.2,0,0],tire:[0,0,0],edge:[.2,0,0],shroud:[.3,0,0],clamp:[1.15,0,0]};
+function posedObject(kind,opt,pose){const o=buildObject(kind,opt);const p=POSE[kind]||[0,0,0];o.inner.rotation.set(p[0],p[1],p[2]);if(pose)o.grp.rotation.y=pose.az||0;return o}
+let _thumbR=null;
+function thumbRenderer(){if(!_thumbR){const r=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setSize(320,240,false);r.setPixelRatio(1);_thumbR=r}return _thumbR}
+const _thumbCache={};
+function renderThumb(kind,opt,view){/* view:{az,el,field} */
+  view=Object.assign({az:.7,el:.45,field:false},view||{});
+  const r=thumbRenderer(),scene=new T.Scene();setupEnv(r,scene);addLights(scene);
+  const o=posedObject(kind,opt);scene.add(o.grp);
+  o.parts.forEach(p=>{});const mats=solidMats(o.parts);o.parts.forEach((p,i)=>{const m=new T.Mesh(p.g,mats[i]);o.inner.add(m)});
+  const box=new T.Box3().setFromObject(o.grp),c=box.getCenter(new T.Vector3()),sz=box.getSize(new T.Vector3()).length();
+  o.grp.position.sub(c);const cam=new T.PerspectiveCamera(32,320/240,.1,50),d=sz*1.55;
+  cam.position.set(Math.sin(view.az)*Math.cos(view.el)*d,Math.sin(view.el)*d,Math.cos(view.az)*Math.cos(view.el)*d);cam.lookAt(0,0,0);
+  r.setClearColor(0x000000,0);r.render(scene,cam);
+  const cv=document.createElement('canvas');cv.width=320;cv.height=240;const x=cv.getContext('2d');
+  if(view.field){const g=x.createLinearGradient(0,0,0,240);g.addColorStop(0,'#8c7d68');g.addColorStop(1,'#5a4d3d');x.fillStyle=g;x.fillRect(0,0,320,240);
+    for(let i=0;i<900;i++){x.fillStyle=`rgba(${60+Math.random()*80|0},${50+Math.random()*60|0},${35+Math.random()*40|0},${.3+Math.random()*.5})`;x.fillRect(Math.random()*320,Math.random()*240,1+Math.random()*4,1+Math.random()*3)}}
+  else{const g=x.createRadialGradient(160,110,10,160,120,220);g.addColorStop(0,'#e9edf0');g.addColorStop(1,'#b7c0c7');x.fillStyle=g;x.fillRect(0,0,320,240)}
+  x.drawImage(r.domElement,0,0);
+  if(view.field){const im=x.getImageData(0,0,320,240),dt=im.data;for(let i=0;i<dt.length;i+=4){const n=(Math.random()-.5)*16;dt[i]+=n;dt[i+1]+=n;dt[i+2]+=n}x.putImageData(im,0,0)}
+  scene.traverse(n=>{if(n.geometry)n.geometry.dispose()});
+  return cv.toDataURL('image/jpeg',.82)}
+function refThumbs(part){const k='k:'+part.kind+part.color;
+  if(!_thumbCache[k])_thumbCache[k]=[renderThumb(part.kind,{wear:.05,color:part.color,seed:3},{az:.7,el:.45}),
+    renderThumb(part.kind,{wear:.6,mud:.4,color:part.color,seed:5},{az:2.2,el:.3,field:true}),
+    renderThumb(part.kind,{wear:.6,mud:.4,color:part.color,seed:9},{az:-.5,el:.85,field:true})];
+  return (part.photos||[]).concat(_thumbCache[k])}
+function sampleThumbs(part,n){const out=[];const az=[1.1,3.0,-1.2,.2];const el=[.5,.15,.9,.35];
+  for(let i=0;i<n;i++)out.push(renderThumb(part.kind,{wear:.75,mud:.55,color:part.color,seed:11+i*3},{az:az[i%4],el:el[i%4],field:true}));return out}
+/* ===== VIEWER 3D ===== */
+class Viewer{
+  constructor(el){this.el=el;this.mode='scan';this.spin=true;this.h=-9;this.top=1;this.bot=-1;this.ref=false;this.t0=0;this.cur=null;
+    this.r=new T.WebGLRenderer({antialias:true});this.r.setPixelRatio(Math.min(devicePixelRatio||1,2));this.r.localClippingEnabled=true;this.r.setClearColor(0x080b0e,1);this.r.toneMapping=T.ACESFilmicToneMapping;this.r.toneMappingExposure=1.5;
+    el.insertBefore(this.r.domElement,el.firstChild);
+    this.scene=new T.Scene();setupEnv(this.r,this.scene);addLights(this.scene);
+    this.cam=new T.PerspectiveCamera(36,1,.1,100);this.th=.8;this.ph=1.2;this.dist=6.2;
+    const ring=new T.RingGeometry(2.2,2.23,96);ring.rotateX(-Math.PI/2);this.floor=new T.Mesh(ring,new T.MeshBasicMaterial({color:0x1f4a55,side:T.DoubleSide}));this.scene.add(this.floor);
+    const grid=new T.GridHelper(6,24,0x14313a,0x0f2229);this.grid=grid;this.scene.add(grid);
+    this.sweep=new T.Mesh(new T.PlaneGeometry(3.4,3.4),new T.MeshBasicMaterial({color:0x36d6e7,transparent:true,opacity:.14,side:T.DoubleSide,depthWrite:false}));this.sweep.rotation.x=-Math.PI/2;this.scene.add(this.sweep);
+    this.sweepEdge=new T.Mesh(new T.RingGeometry(1.55,1.6,64),new T.MeshBasicMaterial({color:0x36d6e7,side:T.DoubleSide}));this.sweepEdge.rotation.x=-Math.PI/2;this.scene.add(this.sweepEdge);
+    this.pSolid=new T.Plane(new T.Vector3(0,-1,0),0);this.pWire=new T.Plane(new T.Vector3(0,1,0),0);
+    this.bind();this.resize();new ResizeObserver(()=>this.resize()).observe(el);
+    this.last=performance.now();this.loop=this.loop.bind(this);requestAnimationFrame(this.loop)}
+  bind(){const c=this.r.domElement;let d=null;c.style.touchAction='none';
+    c.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY};c.setPointerCapture(e.pointerId)});
+    c.addEventListener('pointermove',e=>{if(!d)return;this.th-=(e.clientX-d.x)*.008;this.ph=Math.min(2.8,Math.max(.25,this.ph-(e.clientY-d.y)*.006));d={x:e.clientX,y:e.clientY};this.userDrag=performance.now()});
+    const up=()=>{d=null};c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+    c.addEventListener('wheel',e=>{e.preventDefault();this.dist=Math.min(12,Math.max(3,this.dist*(1+e.deltaY*.001)))},{passive:false})}
+  resize(){const w=this.el.clientWidth,h=this.el.clientHeight;if(!w||!h)return;this.r.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix()}
+  clear(){if(!this.cur)return;this.scene.remove(this.cur);this.cur.traverse(n=>{if(n.geometry)n.geometry.dispose()});this.cur=null}
+  setObject(kind,findOpt,refOpt){
+    this.clear();const root=new T.Group();
+    const f=posedObject(kind,findOpt);const mats=solidMats(f.parts,{clippingPlanes:[this.pSolid]});
+    const wm=new T.LineBasicMaterial({color:0x36d6e7,transparent:true,opacity:.55,clippingPlanes:[this.pWire]});
+    const pm=new T.PointsMaterial({color:0x9ff3ff,size:.018,clippingPlanes:[this.pWire],transparent:true,opacity:.9});
+    f.parts.forEach((p,i)=>{f.inner.add(new T.Mesh(p.g,mats[i]));
+      f.inner.add(new T.LineSegments(new T.WireframeGeometry(p.g),wm));f.inner.add(new T.Points(p.g,pm))});
+    root.add(f.grp);
+    const rf=posedObject(kind,refOpt);const rm=new T.LineBasicMaterial({color:0xffb000,transparent:true,opacity:.75});
+    rf.parts.forEach(p=>rf.inner.add(new T.LineSegments(new T.WireframeGeometry(p.g),rm)));rf.grp.visible=this.ref;root.add(rf.grp);this.refGrp=rf.grp;
+    this.scene.add(root);this.cur=root;
+    const b=new T.Box3().setFromObject(f.grp);const c=b.getCenter(new T.Vector3());const sz=b.getSize(new T.Vector3());const s=1.9/Math.max(sz.x,sz.y,sz.z);
+    root.scale.setScalar(s);f.grp.position.sub(c);rf.grp.position.sub(c);root.position.y=sz.y*s/2+.02;
+    this.bot=.02;this.top=sz.y*s+.02;this.floor.position.y=.01;this.grid.position.y=.01;
+    this.dist=7.2}
+  setMode(m,opts){this.mode=m;this.t0=performance.now();this.onMode&&this.onMode(m)}
+  setRef(v){this.ref=v;if(this.refGrp)this.refGrp.visible=v}
+  loop(now){const dt=Math.min(.05,(now-this.last)/1e3);this.last=now;
+    if(this.cur){
+      if(this.mode==='scan'){this.h=this.bot-.5;const k=((now-this.t0)/1600)%2,u=k<1?k:2-k;this.sy=this.bot+(this.top-this.bot)*u}
+      else if(this.mode==='recon'){const u=Math.min(1,(now-this.t0)/this.reconMs);const e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;this.h=this.bot+(this.top-this.bot+.05)*e;this.sy=this.h;
+        this.onProg&&this.onProg(u);if(u>=1){this.setMode('real')}}
+      else{this.h=this.top+1;this.sy=null;this.onProg&&this.onProg(1)}
+      this.pSolid.constant=this.h;this.pWire.constant=-this.h;
+      this.sweep.visible=this.sweepEdge.visible=this.sy!=null;if(this.sy!=null){this.sweep.position.y=this.sweepEdge.position.y=this.sy}
+      if(this.spin&&(!this.userDrag||now-this.userDrag>2500))this.th+=dt*.35}
+    this.cam.position.set(Math.sin(this.th)*Math.sin(this.ph)*this.dist,Math.cos(this.ph)*this.dist+1.1,Math.cos(this.th)*Math.sin(this.ph)*this.dist);this.cam.lookAt(0,this.cur?(this.top)/2:.8,0);
+    this.r.render(this.scene,this.cam);requestAnimationFrame(this.loop)}
+}
+Viewer.prototype.reconMs=3400;
+/* ===== MESIN KEMIRIPAN ===== */
+const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
+function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return [h,mx?d/mx:0,mx]}
+async function describe(src){
+  const im=await loadImg(src),N=64,cv=document.createElement('canvas');cv.width=N;cv.height=N;const x=cv.getContext('2d',{willReadFrequently:true});
+  const sc=Math.min(N/im.width,N/im.height),w=im.width*sc,h=im.height*sc;x.fillStyle='#808080';x.fillRect(0,0,N,N);x.drawImage(im,(N-w)/2,(N-h)/2,w,h);
+  const d=x.getImageData(0,0,N,N).data;
+  // latar: rata-rata piksel tepi
+  let br=0,bg=0,bb=0,bn=0;for(let i=0;i<N;i++)for(const [a,b] of [[i,2],[i,N-3],[2,i],[N-3,i]]){const k=(b*N+a)*4;br+=d[k];bg+=d[k+1];bb+=d[k+2];bn++}
+  br/=bn;bg/=bn;bb/=bn;
+  const dist=new Float32Array(N*N);let mean=0;for(let i=0;i<N*N;i++){const k=i*4,v=Math.hypot(d[k]-br,d[k+1]-bg,d[k+2]-bb);dist[i]=v;mean+=v}mean/=N*N;
+  // ambang Otsu sederhana
+  let best=0,thr=40;{const hist=new Array(64).fill(0);for(const v of dist)hist[Math.min(63,v/6|0)]++;let tot=N*N,sum=0;hist.forEach((c,i)=>sum+=i*c);let wb=0,sb=0,mx=0;for(let t=0;t<64;t++){wb+=hist[t];if(!wb)continue;const wf=tot-wb;if(!wf)break;sb+=t*hist[t];const mb=sb/wb,mf=(sum-sb)/wf,bv=wb*wf*(mb-mf)*(mb-mf);if(bv>mx){mx=bv;best=t}}thr=Math.max(22,(best+1)*6)}
+  const mask=new Uint8Array(N*N);let area=0,cx=0,cy=0;
+  for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){const i=y*N+xx;if(dist[i]>thr){mask[i]=1;area++;cx+=xx;cy+=y}}
+  // saring: majority 3x3 lalu ambil komponen terbesar
+  {const m2=new Uint8Array(N*N);for(let y=1;y<N-1;y++)for(let xx=1;xx<N-1;xx++){let c=0;for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)c+=mask[(y+a)*N+xx+b];m2[y*N+xx]=c>=5?1:0}
+   const lab=new Int32Array(N*N);let bestL=0,bestS=0,L=0;const st=[];
+   for(let i=0;i<N*N;i++){if(!m2[i]||lab[i])continue;L++;let sz=0;st.push(i);lab[i]=L;while(st.length){const q=st.pop();sz++;const qx=q%N,qy=(q/N)|0;for(const [ax,ay] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=qx+ax,ny=qy+ay;if(nx<0||ny<0||nx>=N||ny>=N)continue;const ni=ny*N+nx;if(m2[ni]&&!lab[ni]){lab[ni]=L;st.push(ni)}}}
+     if(sz>bestS){bestS=sz;bestL=L}}
+   area=0;cx=0;cy=0;for(let i=0;i<N*N;i++){mask[i]=lab[i]===bestL?1:0;if(mask[i]){area++;cx+=i%N;cy+=(i/N)|0}}}
+  if(area<40)return {ok:false,v:new Array(23).fill(0)};
+  cx/=area;cy/=area;let mu20=0,mu02=0,mu11=0,mu30=0,mu03=0,mu21=0,mu12=0,minx=N,maxx=0,miny=N,maxy=0;
+  for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++)if(mask[y*N+xx]){const dx=xx-cx,dy=y-cy;mu20+=dx*dx;mu02+=dy*dy;mu11+=dx*dy;mu30+=dx*dx*dx;mu03+=dy*dy*dy;mu21+=dx*dx*dy;mu12+=dx*dy*dy;minx=Math.min(minx,xx);maxx=Math.max(maxx,xx);miny=Math.min(miny,y);maxy=Math.max(maxy,y)}
+  const n=(m,p)=>m/Math.pow(area,p),n20=n(mu20,2),n02=n(mu02,2),n11=n(mu11,2);
+  const h1=n20+n02,h2=(n20-n02)**2+4*n11*n11;
+  const tr=mu20+mu02,det=mu20*mu02-mu11*mu11,disc=Math.sqrt(Math.max(0,tr*tr/4-det)),l1=tr/2+disc,l2=Math.max(1e-6,tr/2-disc);
+  const elong=1-Math.sqrt(l2/l1);
+  const fill=area/((maxx-minx+1)*(maxy-miny+1));
+  // perimeter / kekasaran siluet
+  let per=0;for(let y=1;y<N-1;y++)for(let xx=1;xx<N-1;xx++){const i=y*N+xx;if(mask[i]&&(!mask[i-1]||!mask[i+1]||!mask[i-N]||!mask[i+N]))per++}
+  const compact=Math.min(1,4*Math.PI*area/(per*per+1));
+  // warna objek
+  const hh=new Array(8).fill(0);let sat=0,val=0,dark=0,bright=0,edge=0,cnt=0;
+  for(let y=1;y<N-1;y++)for(let xx=1;xx<N-1;xx++){const i=y*N+xx;if(!mask[i])continue;const k=i*4,[H,S,V]=rgb2hsv(d[k],d[k+1],d[k+2]);cnt++;sat+=S;val+=V;if(V<.22)dark++;if(V>.7)bright++;
+    if(S>.18)hh[Math.floor(H/45)%8]++;const g1=Math.abs(d[k]-d[k+4])+Math.abs(d[k]-d[k+N*4]);edge+=g1}
+  const hs=hh.reduce((a,b)=>a+b,0)||1;
+  // lubang: komponen latar yang tidak menyentuh tepi gambar, di dalam objek
+  let holes=0,holeA=0;{const seen=new Uint8Array(N*N),st=[];for(let i=0;i<N*N;i++){if(mask[i]||seen[i])continue;let touch=false,sz=0;st.push(i);seen[i]=1;
+    while(st.length){const q=st.pop();sz++;const qx=q%N,qy=(q/N)|0;if(qx===0||qy===0||qx===N-1||qy===N-1)touch=true;for(const [ax,ay] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=qx+ax,ny=qy+ay;if(nx<0||ny<0||nx>=N||ny>=N)continue;const ni=ny*N+nx;if(!mask[ni]&&!seen[ni]){seen[ni]=1;st.push(ni)}}}
+    if(!touch&&sz>=3&&sz<area*.4){holes++;holeA+=sz}}}
+  // profil lebar sepanjang sumbu utama
+  const ang=.5*Math.atan2(2*mu11,mu20-mu02),ca=Math.cos(ang),sa=Math.sin(ang);const bins=new Array(8).fill(0),mn=new Array(8).fill(1e9),mxx=new Array(8).fill(-1e9);let tmin=1e9,tmax=-1e9;
+  const pts=[];for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++)if(mask[y*N+xx]){const dx=xx-cx,dy=y-cy,u=dx*ca+dy*sa,w=-dx*sa+dy*ca;pts.push([u,w]);tmin=Math.min(tmin,u);tmax=Math.max(tmax,u)}
+  for(const [u,w] of pts){const bi=Math.min(7,Math.floor((u-tmin)/(tmax-tmin+1e-6)*8));bins[bi]++}
+  const meanB=bins.reduce((a,b)=>a+b,0)/8,sdB=Math.sqrt(bins.reduce((a,b)=>a+(b-meanB)**2,0)/8)/(meanB+1e-6);
+  const v=[elong,fill,compact,Math.min(1,Math.log10(1+h1*1e3)/3),Math.min(1,h2*30),sat/cnt,val/cnt,dark/cnt,bright/cnt,Math.min(1,edge/cnt/80),...hh.map(a=>a/hs),Math.min(1,(maxx-minx+1)/(maxy-miny+1)/3),area/(N*N),Math.min(1,holes/4),Math.min(1,holeA/area*8),Math.min(1,sdB)];
+  return {ok:true,v}}
+const WTS=[3,2,1.5,1.5,1,1.2,1.4,2.6,1.2,1.2,.5,.5,.5,.5,.5,.5,.5,.5,1,.3,1.3,1,1];
+function vdist(a,b){let s=0,ws=0;for(let i=0;i<WTS.length;i++){s+=WTS[i]*Math.abs(a[i]-b[i]);ws+=WTS[i]}return s/ws}
+const _desc={};
+const refKey=p=>(p.photos&&p.photos.length)?p.id+':'+p.photos.length:'k:'+p.kind+p.color;
+async function partDescs(p){const k=refKey(p);if(_desc[k])return _desc[k];const th=refThumbs(p);const out=[];for(const t of th)out.push(await describe(t));_desc[k]=out.filter(o=>o.ok);return _desc[k]}
+function sizeScore(mm,p){if(!mm)return null;const s=Math.max(p.L,p.W,p.H);const r=Math.log(mm/s);return Math.exp(-r*r/(2*.55*.55))}
+async function analyze(photos,ctx,partsAll,unitsAll,prog){
+  const q=[];for(const ph of photos){const d=await describe(ph.src);if(d.ok)q.push(d)}
+  const area=AREA_UNITS[ctx.loc]||[];const rows=[];
+  let pi=0;for(const p of partsAll){
+    if(!_desc[refKey(p)]){prog&&prog(pi,partsAll.length);await new Promise(r=>setTimeout(r,0))}pi++;
+    const refs=await partDescs(p);let vis=0;
+    if(q.length&&refs.length){let tot=0;for(const a of q){let m=1;for(const r of refs)m=Math.min(m,vdist(a.v,r.v));tot+=m}vis=Math.exp(-(tot/q.length)*5.2)}
+    const sz=sizeScore(ctx.size,p),ty=ctx.type?(ctx.type===p.type?1:.05):null,ar=area.includes(p.unitId)?1:.35,pr=Math.min(1,Math.log(1+p.incidents)/Math.log(14));
+    let sc=.58*vis,wt=.58;if(sz!=null){sc+=.14*sz;wt+=.14}if(ty!=null){sc+=.08*ty;wt+=.08}sc+=.12*ar+.08*pr;wt+=.2;
+    rows.push({p,vis,sz,ty,ar,pr,score:sc/wt})}
+  rows.sort((a,b)=>b.score-a.score);
+  const mx=rows[0]?rows[0].score:0,T_=.07;let z=0;rows.forEach(r=>{r.e=Math.exp((r.score-mx)/T_);z+=r.e});rows.forEach(r=>r.conf=r.e/z);
+  const um={};rows.forEach(r=>{const u=um[r.p.unitId]||(um[r.p.unitId]={u:unitsAll.find(x=>x.id===r.p.unitId),conf:0,top:r});u.conf+=r.conf});
+  const units=Object.values(um).filter(x=>x.u).sort((a,b)=>b.conf-a.conf);
+  return {rows,units,angles:q.length}}
+/* ===== PENYIMPANAN ===== */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600)}
+const store={mode:'local',db:null,data:{units:{},parts:{},extra:{},inspect:(typeof CT_INSPECT!=='undefined'?CT_INSPECT:{}),cases:{},requests:{}},cb:null,
+  lsGet(){try{return JSON.parse(localStorage.getItem('ct-data')||'null')}catch(e){return null}},
+  lsSet(){try{localStorage.setItem('ct-data',JSON.stringify(this.data))}catch(e){toast('Penyimpanan browser penuh. Hapus foto lama.')}},
+  async init(cb){this.cb=cb;const l=window.CT_BOOT?null:this.lsGet();if(l)this.data=Object.assign(this.data,l);
+    try{const c=window.claude&&await claude.use('db');if(c){this.db=c;this.mode='shared';
+      for(const coll of ['units','parts','extra','inspect','cases','requests']){c.collection(coll).onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]=d.data());this.data[coll]=o;this.lsSet();this.cb()},()=>{})}}}catch(e){}
+    cb()},
+  async set(coll,id,obj){this.data[coll][id]=obj;this.lsSet();this.cb();if(this.db){try{await this.db.doc(coll+'/'+id).set(obj)}catch(e){if(e&&e.code==='quota_exceeded')toast('Kapasitas basis data bersama penuh')}}},
+  async del(coll,id){delete this.data[coll][id];this.lsSet();this.cb();if(this.db){try{await this.db.doc(coll+'/'+id).delete()}catch(e){}}}};
+let UNITS=[],PARTS=[];
+function rebuild(){
+  UNITS=UNITS0.concat(Object.values(store.data.units).sort((a,b)=>(a.ts||0)-(b.ts||0)));
+  const ex=store.data.extra;
+  PARTS=PARTS0.map(p=>{const e=ex[p.id];return e?Object.assign({},p,{photos:(p.photos||[]).concat(e.photos||[]),history:(e.history||[]).concat(p.history),extra:true}):p})
+    .concat(Object.values(store.data.parts).sort((a,b)=>(a.ts||0)-(b.ts||0)).map(p=>{const e=ex[p.id];return Object.assign({history:[],photos:[],incidents:0,note:'',color:'#5d636a'},p,e?{photos:(p.photos||[]).concat(e.photos||[]),history:(e.history||[]).concat(p.history||[])}:{})}));
+  if(window.renderDB&&!$('v-database').hidden)renderDB()}
+function fileToSmall(file,max=360){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const i=new Image();i.onerror=rej;i.onload=()=>{const s=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.72))};i.src=r.result};r.readAsDataURL(file)})}
+
+/* ===== ANALISIS UI ===== */
+let photos=[],result=null,sel=0,viewer=null,ROLE=window.CT_BOOT?'viewer':'admin';
+const ANG_LABEL=['Depan','Belakang','Samping','Atas','Bawah','Close-up'];
+function renderAngles(){const a=$('angles');a.innerHTML=photos.map((p,i)=>`<div class="ang"><img src="${p.src}" alt="Foto sudut ${i+1}"><span>${esc(p.label)}</span><b data-i="${i}" title="Hapus">×</b></div>`).join('');
+  $('run').disabled=!photos.length;$('angHint').textContent=photos.length?`${photos.length} sudut. ${photos.length<3?'Tambah sudut lain untuk memperkuat hasil.':'Cukup untuk analisis.'}`:'Belum ada foto. Coba contoh temuan di bawah.'}
+$('angles').addEventListener('click',e=>{const b=e.target.closest('b[data-i]');if(b){photos.splice(+b.dataset.i,1);renderAngles()}});
+async function addFiles(fl){for(const f of [...fl]){if(!f.type.startsWith('image/'))continue;try{photos.push({src:await fileToSmall(f,480),label:ANG_LABEL[photos.length%6]})}catch(e){toast('Foto tidak bisa dibaca')}}renderAngles()}
+const drop=$('drop'),file=$('file');drop.onclick=()=>file.click();drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();file.click()}};
+file.onchange=()=>{addFiles(file.files);file.value=''};
+['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+const SAMPLE_IDS=['p29','p1','p13','p12','p23','p3','p6','p18','p15'];
+function renderSamples(){$('samples').innerHTML='<button class="chip on" data-case="1" style="cursor:pointer">Kasus nyata · HD785 #512</button>'+SAMPLE_IDS.map(id=>{const p=PARTS0.find(x=>x.id===id);return `<button class="chip" data-s="${id}" style="cursor:pointer">${esc(KIND_LABEL[p.kind])} · ${esc((UNITS0.find(x=>x.id===p.unitId)||{}).name||'')}</button>`}).join('')}
+$('samples').addEventListener('click',async e=>{const c=e.target.closest('[data-case]');if(c){photos=CASE_FIND.map((s,i)=>({src:s,label:'Foto temuan '+(i+1)}));renderAngles();$('f-type').value='metal';$('f-size').value='';runAnalysis();return}const b=e.target.closest('[data-s]');if(!b)return;const p=PARTS.find(x=>x.id===b.dataset.s);if(!p)return;
+  const lbl=b.textContent;b.textContent='…';await new Promise(r=>setTimeout(r,20));
+  photos=sampleThumbs(p,2).map((s,i)=>({src:s,label:ANG_LABEL[i]+' (contoh)'}));renderAngles();b.textContent=lbl;
+  $('f-type').value='';$('f-size').value='';runAnalysis()});
+$('run').onclick=runAnalysis;
+$('f-date').value=new Date().toISOString().slice(0,10);
+function ctxNow(){return {loc:$('f-loc').value,type:$('f-type').value,size:parseFloat($('f-size').value)||0}}
+async function runAnalysis(){
+  if(!photos.length)return;$('run').disabled=true;$('run').textContent='Menganalisis…';
+  setStage('<b>Memproses foto</b>Ekstraksi siluet, warna, tekstur…');
+  await new Promise(r=>setTimeout(r,30));
+  try{result=await analyze(photos,ctxNow(),PARTS.filter(p=>p.fm!==false),UNITS,(i,n)=>setStage(`<b>Menyiapkan basis referensi</b>Part ${i+1} dari ${n}`))}catch(e){console.error(e);toast('Analisis gagal');$('run').disabled=false;$('run').textContent='Lacak sumber';return}
+  sel=0;renderResult();$('run').disabled=false;$('run').textContent='Lacak sumber'}
+function setStage(h){const s=$('stage');if(h){s.innerHTML=h;s.classList.add('show')}else s.classList.remove('show')}
+function confLabel(c,angles){const a=c*(angles>=3?1:angles===2?.95:.88);return a>.5?['Tinggi','ok']:a>.25?['Sedang','warn']:['Rendah','bad']}
+function renderResult(){
+  const rows=result.rows.slice(0,8);
+  $('rank').innerHTML=rows.map((r,i)=>{const u=UNITS.find(x=>x.id===r.p.unitId)||{name:'?'};const th=refThumbs(r.p)[0];
+    return `<button class="rk" data-i="${i}" aria-current="${i===sel}"><span class="n">${i+1}</span><img src="${th}" alt=""><span class="t"><b>${esc(r.p.name)}</b><span>${esc(u.name)} · ${esc(r.p.system)}</span><span class="sc">${(r.conf*100).toFixed(0)}%</span><span class="bar" style="display:block"><i style="width:${Math.max(3,r.conf*100/rows[0].conf)}%"></i></span></span></button>`}).join('');
+  showSelected()}
+$('rank').addEventListener('click',e=>{const b=e.target.closest('.rk');if(!b)return;sel=+b.dataset.i;[...$('rank').children].forEach((c,i)=>c.setAttribute('aria-current',i===sel));showSelected(true)});
+function wearEstimate(){return .55}
+function showSelected(quick){
+  const r=result.rows[sel],p=r.p,u=UNITS.find(x=>x.id===p.unitId)||{name:'?',kind:''};
+  const [cl,cc]=confLabel(r.conf,result.angles);
+  $('vtitle').textContent='2 · Rekonstruksi 3D';$('vmeta').textContent=`${KIND_LABEL[p.kind]||p.kind} · ${p.L}×${p.W}×${p.H} mm`;
+  if(!viewer){viewer=new Viewer($('vp'));viewer.onMode=m=>{document.querySelectorAll('.ctl [data-m]').forEach(b=>{if(['scan','recon','real'].includes(b.dataset.m))b.classList.toggle('on',b.dataset.m===m)});$('hudTL').textContent='MODE: '+({scan:'SCAN POINT CLOUD',recon:'REKONSTRUKSI MESH',real:'RENDER REALISTIS'}[m])};
+    viewer.onProg=u=>{$('prog').firstElementChild.style.width=(u*100)+'%'}}
+  setStage('');const wear=.55+Math.min(.3,(result.rows[0].vis||0)*.0);
+  viewer.setObject(p.kind,{wear,mud:.5,color:p.color,seed:11},{wear:0,mud:0,color:p.color,seed:3});
+  $('hudTR').textContent=`HIPOTESIS #${sel+1} · ${(r.conf*100).toFixed(0)}%`;$('hudBL').textContent=`FOTO ${result.angles} SUDUT`;$('hudBR').textContent=ctxNow().loc.toUpperCase();
+  if(quick){viewer.reconMs=1800;viewer.setMode('recon')}else{viewer.reconMs=3400;viewer.setMode('scan');setTimeout(()=>{if(viewer.mode==='scan'&&result){viewer.setMode('recon')}},1700)}
+  renderLambung(p);
+  autoPlayed=false;updateUnitSection();
+  // diagnostik
+  const al=$('alert');al.hidden=false;
+  al.innerHTML=`<span class="chip ${cc}">Keyakinan ${cl}</span><strong>${esc(u.name)} · ${esc(p.name)}</strong><span class="hint">${esc(p.partNo)} · ${esc(p.system)}</span><button class="btn sm" id="goUnit" style="margin-left:auto">Lihat lokasi di unit ↓</button>`;
+  const last=(p.history&&p.history[0])||null;const inArea=r.ar>=1;
+  const act=p.type==='metal'?'Periksa part serupa pada unit di area temuan. Pasang magnet atau metal detector di titik crusher/ROM, dan cek GET unit terkait.':'Periksa kondisi ban atau hose unit terkait dan pisahkan material non-logam dari ROM sebelum crusher.';
+  const sz=r.sz==null?'Ukuran belum diisi':`${Math.round(r.sz*100)}% cocok`;
+  const D=(t,v,x)=>`<div><dt>${t}</dt><dd>${v}</dd>${x||''}</div>`;
+  $('diag').innerHTML=
+    D('Sumber paling mungkin',`<span class="big">${esc(u.name)}</span>`,`<div class="hint">${esc(u.kind)} · ${(result.units.find(x=>x.u.id===u.id)||{conf:0}).conf*100|0}% total semua part unit ini</div>`)+
+    D('Part',esc(p.name),`<div class="hint">${esc(p.material)}</div>`)+
+    D('Jenis part',esc(KIND_LABEL[p.kind]||p.kind),`<div class="hint">${(result.rows.filter(x=>x.p.kind===p.kind).reduce((a,x)=>a+x.conf,0)*100)|0}% peluang bahwa temuan ini jenis tersebut, ${result.rows.filter(x=>x.p.kind===p.kind&&x.conf>.02).length} part serupa di unit berbeda</div>`)+
+    D('Kemiripan visual',`<span class="big">${(r.vis*100).toFixed(0)}</span>`,`<div class="meter"><i style="width:${r.vis*100}%;background:var(--accent)"></i></div>`)+
+    D('Kecocokan ukuran',sz)+
+    D('Unit aktif di area',inArea?'<span style="color:var(--ok)">Ya, beroperasi di '+esc(ctxNow().loc)+'</span>':'<span style="color:var(--warn)">Tidak tercatat di area ini</span>')+
+    D('Kejadian 12 bulan',`<span class="big">${p.incidents}</span>`,`<div class="hint">${esc(p.note||'—')}</div>`)+
+    D('Penggantian terakhir',last?`${esc(last.date)} · ${Number(last.hm).toLocaleString('id-ID')} HM`:'Belum ada riwayat',last?`<div class="hint">${esc(last.reason)}</div>`:'')+
+    D('Tindak lanjut',esc(act))+
+    (result.angles<3?D('Kualitas input',`Baru ${result.angles} sudut`,'<div class="hint">Tambah foto dari sisi lain, dengan penggaris sebagai pembanding.</div>'):'')}
+document.querySelector('.ctl').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b||!viewer||!viewer.cur)return;const m=b.dataset.m;
+  if(m==='spin'){viewer.spin=!viewer.spin;b.classList.toggle('on',viewer.spin)}
+  else if(m==='ref'){viewer.setRef(!viewer.ref);b.classList.toggle('on',viewer.ref)}
+  else{viewer.reconMs=m==='recon'?3400:1;viewer.setMode(m)}});
+
+/* ===== NOMOR LAMBUNG ===== */
+const STAT={belum:['Belum diperiksa','chip'],lengkap:['Lengkap','chip ok'],hilang:['Hilang','chip bad'],rusak:['Rusak','chip warn']};
+function renderLambung(p){
+  const ctx=ctxNow(),date=$('f-date').value||new Date().toISOString().slice(0,10);
+  const rows=lambungOf(p.unitId).map(no=>{const ins=store.data.inspect[no+'|'+p.id],st=ins?ins.status:'belum',op=operatingIn(p.unitId,no,ctx.loc,date);
+    return {no,st,op,s:(st==='hilang'?4:st==='rusak'?3:st==='belum'?1:0)+(op?2.5:0)}}).sort((a,b)=>b.s-a.s||a.no-b.no);
+  const unit=UNITS.find(x=>x.id===p.unitId)||{name:''};
+  $('lb').innerHTML=`<div class="body" style="gap:8px"><div class="hint">Kandidat ${esc(unit.name)} untuk part <b>${esc(p.name)}</b>. Urutan: hilang atau rusak lebih dulu, lalu yang beroperasi di ${esc(ctx.loc)} pada ${esc(date)}.</div>
+  <div class="scroll"><table class="hist"><thead><tr><th>No.</th><th>Area</th><th>Inspeksi</th><th></th></tr></thead><tbody>${rows.slice(0,10).map(r=>`<tr><td><b>${esc(r.no)}</b></td><td>${r.op?'<span class="chip ok">di area</span>':'<span class="chip">lain/libur</span>'}</td>
+  <td><select ${ROLE==='viewer'?'disabled':''} data-ins="${esc(r.no)}" aria-label="Status inspeksi ${esc(r.no)}" style="padding:4px 6px;font-size:12px;width:auto;min-width:112px">${Object.keys(STAT).map(k=>`<option value="${k}" ${k===r.st?'selected':''}>${STAT[k][0]}</option>`).join('')}</select></td>
+  <td><button class="btn sm" ${ROLE==='viewer'?'disabled':''} data-src="${esc(r.no)}">Tetapkan</button></td></tr>`).join('')}</tbody></table></div>
+  <div class="hint">${window.CT_BOOT?'Status inspeksi dibaca dari database. Catat inspeksi dan kasus di halaman Inspeksi &amp; Kasus. Area operasi memakai tabel Operasi harian bila terisi, selain itu dummy.':'Data operasi dan inspeksi masih dummy. Ganti dengan data dispatch dan checklist inspeksi unit.'}</div></div>`}
+$('lb').addEventListener('change',e=>{const s=e.target.closest('[data-ins]');if(!s||!result)return;const p=result.rows[sel].p,key=s.dataset.ins+'|'+p.id;
+  store.set('inspect',key,{no:s.dataset.ins,partId:p.id,status:s.value,date:$('f-date').value});renderLambung(p);toast('Inspeksi '+s.dataset.ins+' dicatat')});
+$('lb').addEventListener('click',e=>{const b=e.target.closest('[data-src]');if(!b||!result)return;const p=result.rows[sel].p,id='k'+Date.now().toString(36);
+  store.set('cases',id,{id,ts:Date.now(),date:$('f-date').value,loc:$('f-loc').value,partId:p.id,unitId:p.unitId,no:b.dataset.src,note:'Ditetapkan oleh QC dari hasil analisis foto ('+photos.length+' sudut).'});toast('Kasus dicatat: '+p.name+' · '+b.dataset.src)});
+/* ===== BASIS DATA UI ===== */
+let dbUnit='hd785',dbQ='',dbFm=false,dbOpen=false;
+function renderDB(){
+  const groups={};UNITS.forEach(u=>(groups[u.kind]=groups[u.kind]||[]).push(u));const ORD=['Dump truck','Excavator'];
+  $('ulist').innerHTML=Object.keys(groups).sort((a,b)=>{const x=ORD.indexOf(a),y=ORD.indexOf(b);return (x<0?9:x)-(y<0?9:y)}).map(k=>`<div class="ugrp">${esc(k)}</div>`+groups[k].map(u=>{const n=PARTS.filter(p=>p.unitId===u.id).length;return `<button data-u="${u.id}" aria-current="${u.id===dbUnit}"><span>${esc(u.name)}<br><small>${esc(u.maker||'')}</small></span><small>${n} part</small></button>`}).join('')).join('');
+  const u=UNITS.find(x=>x.id===dbUnit)||UNITS[0];if(!u)return;dbUnit=u.id;
+  $('dbTitle').textContent=u.name;
+  const sp=SPEC[u.id];
+  $('uinfo').innerHTML=`<div class="chips"><span class="chip on">${esc(u.kind)}</span><span class="chip">${esc(u.maker||'')}</span><span class="chip">${u.fleet||'—'} unit</span><span class="chip">rata-rata ${esc(u.hm||'—')} HM</span></div><div class="hint">${esc(u.desc||'')}</div>`+
+    (sp?`<div class="scroll"><table class="hist"><tbody>${sp.rows.map(r=>`<tr><th style="width:34%">${esc(r[0])}</th><td>${esc(r[1])}</td><td><span class="chip ${r[2]==='web'?'ok':'warn'}">${r[2]==='web'?'lembar spesifikasi':'indikatif'}</span></td></tr>`).join('')}</tbody></table></div><div class="hint">Sumber: ${esc(sp.src)}. Nilai dari OEM berlaku untuk unit dasar dan bisa berbeda menurut opsi. Verifikasi dengan parts book sebelum dipakai untuk keputusan.</div>`:'<div class="hint">Spesifikasi unit belum diisi.</div>');
+  renderTree()}
+function renderTree(){
+  const q=dbQ.trim().toLowerCase();let list=PARTS.filter(p=>p.unitId===dbUnit);const total=list.length;
+  if(q)list=list.filter(p=>(p.name+' '+p.partNo+' '+(p.system||'')+' '+(p.asm||'')+' '+p.material+' '+(KIND_LABEL[p.kind]||'')).toLowerCase().includes(q));
+  if(dbFm)list=list.filter(p=>p.fm!==false);
+  const sys={};list.forEach(p=>{const s=p.system||'Lainnya',a=p.asm||'Umum';((sys[s]=sys[s]||{})[a]=sys[s][a]||[]).push(p)});
+  const open=dbOpen||!!q;
+  $('dbCount').textContent=`${list.length} dari ${total} part`;
+  $('parts').innerHTML=list.length?Object.keys(sys).map(s=>{const asms=sys[s],n=Object.values(asms).reduce((a,b)=>a+b.length,0);
+    return `<details class="sys" ${open?'open':''}><summary><b>${esc(s)}</b><small>${Object.keys(asms).length} assembly · ${n} part</small></summary>`+Object.keys(asms).map(a=>{const ps=asms[a].slice().sort((x,y)=>Math.max(y.L,y.W,y.H)-Math.max(x.L,x.W,x.H));
+      return `<details class="asm" ${open?'open':''}><summary>${esc(a)}<small>${ps.length} part</small></summary><div class="scroll"><table class="hist"><thead><tr><th>Part</th><th>No. part</th><th>Jenis</th><th>Dimensi (mm)</th><th>Jml</th><th>Kontaminan</th><th></th></tr></thead><tbody>`+
+      ps.map(p=>`<tr><td><b>${esc(p.name)}</b><br><small class="hint">${esc(p.material)}</small></td><td>${esc(p.partNo)}</td><td>${esc(KIND_LABEL[p.kind]||p.kind)}<br><small class="hint">${p.type==='metal'?'logam':'non-logam'}</small></td><td>${p.L}×${p.W}×${p.H}</td><td>${p.qty||'—'}</td><td>${p.fm===false?'<span class="chip">tidak</span>':'<span class="chip warn">kandidat</span>'}</td><td style="white-space:nowrap"><button class="btn sm" data-d="${p.id}">Detail</button>${p.builtin?'':` <button class="btn sm" data-x="${p.id}">Hapus</button>`}</td></tr>`).join('')+`</tbody></table></div></details>`}).join('')+`</details>`}).join(''):'<div class="empty"><b>Tidak ada part</b>Ubah kata kunci atau tekan Tambah part.</div>'}
+$('dbq').addEventListener('input',e=>{dbQ=e.target.value;renderTree()});
+$('dbfm').addEventListener('change',e=>{dbFm=e.target.checked;renderTree()});
+$('dbexp').addEventListener('click',()=>{dbOpen=!dbOpen;$('dbexp').textContent=dbOpen?'Ciutkan semua':'Buka semua';renderTree()});
+$('ulist').addEventListener('click',e=>{const b=e.target.closest('[data-u]');if(b){dbUnit=b.dataset.u;renderDB()}});
+$('parts').addEventListener('click',e=>{const d=e.target.closest('[data-d]'),x=e.target.closest('[data-x]');if(d)openDetail(d.dataset.d);if(x){store.del('parts',x.dataset.x);store.del('extra',x.dataset.x);toast('Part dihapus')}});
+function openModal(t,h){$('mTitle').textContent=t;$('mBody').innerHTML=h;$('modal').classList.add('show')}
+function closeModal(){$('modal').classList.remove('show')}
+$('mClose').onclick=closeModal;$('modal').addEventListener('click',e=>{if(e.target===$('modal'))closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+function openDetail(id){const p=PARTS.find(x=>x.id===id);if(!p)return;const th=refThumbs(p);
+  openModal(p.name,`<div class="angles" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr))">${th.map(s=>`<div class="ang"><img src="${s}" alt=""></div>`).join('')}</div>
+  <div class="hint">${esc(p.material)} · ${esc(p.note||'')}</div>
+  <div class="scroll"><table class="hist"><thead><tr><th>Tanggal</th><th>HM</th><th>Alasan</th></tr></thead><tbody>${(p.history||[]).map(h=>`<tr><td>${esc(h.date)}</td><td>${Number(h.hm).toLocaleString('id-ID')}</td><td>${esc(h.reason)}</td></tr>`).join('')||'<tr><td colspan="3">Belum ada riwayat</td></tr>'}</tbody></table></div>
+  <div class="row2"><label>Tanggal<input id="h-date" type="month" value="${new Date().toISOString().slice(0,7)}"></label><label>HM<input id="h-hm" type="number" placeholder="mis. 34200"></label></div>
+  <label>Alasan penggantian<input id="h-r" placeholder="Aus normal, patah, lepas…"></label>
+  <div class="row2"><button class="btn" id="h-add">Tambah riwayat</button><button class="btn" id="h-ph">Tambah foto referensi</button></div><input type="file" id="h-file" accept="image/*" multiple hidden>`);
+  $('h-add').onclick=()=>{const e=store.data.extra[id]||{photos:[],history:[]};e.history=[{date:$('h-date').value,hm:+$('h-hm').value||0,reason:$('h-r').value||'—'}].concat(e.history||[]);store.set('extra',id,e);toast('Riwayat ditambahkan');openDetail(id)};
+  $('h-ph').onclick=()=>$('h-file').click();
+  $('h-file').onchange=async()=>{const e=store.data.extra[id]||{photos:[],history:[]};e.photos=(e.photos||[]).slice();for(const f of [...$('h-file').files]){try{e.photos.push(await fileToSmall(f))}catch(_){}}await store.set('extra',id,e);delete _desc[id+':0'];toast('Foto referensi ditambahkan');openDetail(id)}}
+function kindOptions(sel){return KINDS.map(k=>`<option value="${k}" ${k===sel?'selected':''}>${KIND_LABEL[k]}</option>`).join('')}
+$('addPart').onclick=()=>{const u=UNITS.find(x=>x.id===dbUnit);let pp=[];
+  openModal('Tambah part · '+u.name,`<div class="row2"><label>Nama part<input id="n-name" placeholder="mis. Bucket tooth"></label><label>Nomor part<input id="n-no" placeholder="mis. 208-70-14152"></label></div>
+  <div class="row2"><label>Sistem<input id="n-sys" list="sysList" placeholder="Attachment, Undercarriage…"></label><label>Assembly<input id="n-asm" placeholder="Bucket, Track…"></label></div><datalist id="sysList">${[...new Set(PARTS.filter(p=>p.unitId===dbUnit).map(p=>p.system))].map(s=>`<option value="${esc(s)}">`).join('')}</datalist><label>Bentuk 3D<select id="n-kind">${kindOptions('tooth')}</select></label>
+  <div class="row2"><label>Jenis<select id="n-type"><option value="metal">Logam</option><option value="nonmetal">Non-logam</option></select></label><label>Material<input id="n-mat" placeholder="Baja paduan"></label></div>
+  <div class="row2"><label>Panjang (mm)<input id="n-L" type="number" value="200"></label><label>Lebar (mm)<input id="n-W" type="number" value="100"></label></div>
+  <div class="row2"><label>Tinggi (mm)<input id="n-H" type="number" value="100"></label><label>Kejadian 12 bln<input id="n-inc" type="number" value="0" min="0"></label></div>
+  <label>Keterangan kerusakan umum<textarea id="n-note" placeholder="Pola aus atau patah yang biasa terjadi"></textarea></label>
+  <button class="btn" id="n-ph">Tambah foto referensi</button><input type="file" id="n-file" accept="image/*" multiple hidden><div class="angles" id="n-prev"></div>
+  <button class="btn pri" id="n-save">Simpan part</button>`);
+  $('n-ph').onclick=()=>$('n-file').click();
+  $('n-file').onchange=async()=>{for(const f of [...$('n-file').files]){try{pp.push(await fileToSmall(f))}catch(_){}}$('n-prev').innerHTML=pp.map(s=>`<div class="ang"><img src="${s}" alt=""></div>`).join('')};
+  $('n-save').onclick=()=>{const name=$('n-name').value.trim();if(!name){toast('Isi nama part');return}const id='u'+Date.now().toString(36);
+    store.set('parts',id,{id,ts:Date.now(),unitId:dbUnit,name,partNo:$('n-no').value||'—',system:$('n-sys').value||'Lainnya',asm:$('n-asm').value||'Umum',fm:true,qty:1,kind:$('n-kind').value,type:$('n-type').value,material:$('n-mat').value||'—',L:+$('n-L').value||100,W:+$('n-W').value||100,H:+$('n-H').value||100,color:$('n-type').value==='metal'?'#5d636a':'#1e2022',incidents:+$('n-inc').value||0,note:$('n-note').value,history:[],photos:pp});
+    closeModal();toast('Part ditambahkan ke '+u.name)}};
+$('addUnit').onclick=()=>{openModal('Tambah unit',`<div class="row2"><label>Model unit<input id="u-name" placeholder="mis. HD1500-8"></label><label>Jenis<input id="u-kind" placeholder="Dump truck"></label></div><div class="row2"><label>Jumlah unit<input id="u-fleet" type="number" value="1"></label><label>Rata-rata HM<input id="u-hm" placeholder="25.000"></label></div><label>Keterangan<input id="u-desc"></label><button class="btn pri" id="u-save">Simpan unit</button>`);
+  $('u-save').onclick=()=>{const name=$('u-name').value.trim();if(!name){toast('Isi model unit');return}const id='x'+Date.now().toString(36);store.set('units',id,{id,ts:Date.now(),name,kind:$('u-kind').value||'Unit',fleet:+$('u-fleet').value||1,hm:$('u-hm').value,desc:$('u-desc').value});dbUnit=id;closeModal();toast('Unit ditambahkan')}};
+/* ===== NAVIGASI ===== */
+function renderKasus(){const all=CASES0.concat(Object.values(store.data.cases).sort((a,b)=>(b.ts||0)-(a.ts||0)));$('kCount').textContent=all.length+' kasus';
+  $('kList').innerHTML=all.map(c=>{const p=PARTS.find(x=>x.id===c.partId)||{name:'(part dihapus)',kind:'bolt',photos:[]};const u=UNITS.find(x=>x.id===c.unitId)||{name:'?'};const th=c.builtin?CASE_FIND.concat(CASE_REF):[refThumbs(p)[0]];
+    return `<div class="body" style="border-bottom:1px solid var(--line)"><div class="chips"><span class="chip on">${esc(u.name)} · No. ${esc(c.no)}</span><span class="chip">${esc(c.date)}</span><span class="chip">${esc(c.loc)}</span>${c.builtin?'<span class="chip ok">kasus asli</span>':''}</div><b>${esc(p.name)}</b><div class="hint">${esc(c.note)}</div><div class="angles" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">${th.map(s=>`<div class="ang"><img src="${s}" alt=""></div>`).join('')}</div></div>`}).join('')}
+function route(){const v=location.hash==='#database'?'database':location.hash==='#kasus'?'kasus':'analisis';
+  $('v-analisis').hidden=v!=='analisis';$('v-database').hidden=v!=='database';$('v-kasus').hidden=v!=='kasus';
+  document.querySelectorAll('nav [data-view]').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===v));
+  if(v==='database')renderDB();if(v==='kasus')renderKasus()}
+document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)location.hash=b.dataset.view});
+addEventListener('hashchange',route);
+renderSamples();
+store.init(()=>{rebuild()}).then(()=>route());
+(async function warm(){await new Promise(r=>setTimeout(r,600));for(const p of PARTS0.filter(x=>x.fm)){await partDescs(p);await new Promise(r=>setTimeout(r,0))}})();
+/* ===== MODEL UNIT 3D SKEMATIK + LOKASI PART ===== */
+/* koordinat: meter, +z = depan unit, +y = atas, +x = sisi KIRI unit (menghadap depan) */
+const UM=(c,o)=>new T.MeshStandardMaterial(Object.assign({color:c,metalness:.45,roughness:.6},o||{}));
+function ubox(p,w,h,d,x,y,z,m){const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);p.add(o);return o}
+function ulimb(p,a,b,r,m){const A=new T.Vector3(...a),B=new T.Vector3(...b),d=B.clone().sub(A),L=d.length();const o=new T.Mesh(new T.CylinderGeometry(r,r,L,14),m);
+  o.position.copy(A.clone().add(B).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());p.add(o);return o}
+function uwheel(p,x,y,z,r,w,tm,rm){const t=new T.Mesh(new T.CylinderGeometry(r,r,w,28),tm);t.rotation.z=Math.PI/2;t.position.set(x,y,z);p.add(t);
+  const rim=new T.Mesh(new T.CylinderGeometry(r*.55,r*.55,w+.04,20),rm);rim.rotation.z=Math.PI/2;rim.position.set(x,y,z);p.add(rim)}
+const UC={yellow:'#e8b81c',dark:'#2a2d31',steel:'#6d737a',tire:'#17191a',glass:'#6fa3c4',rim:'#9aa0a6',hose:'#111214',clamp:'#c9ced3'};
+function buildTruckModel(){const g=new T.Group(),Y=UM(UC.yellow),D=UM(UC.dark),S=UM(UC.steel),TR=UM(UC.tire,{metalness:0,roughness:.95}),RM=UM(UC.rim,{metalness:.8,roughness:.4}),GL=UM(UC.glass,{metalness:.2,roughness:.2});
+  ubox(g,2.6,.7,9.6,0,1.75,-.4,D);ubox(g,3.4,1.5,1.7,0,2.5,4.7,Y);ubox(g,3.0,.5,.3,0,3.4,5.6,D);
+  ubox(g,1.9,1.9,1.9,1.6,3.3,3.4,Y);ubox(g,1.6,.9,.05,1.6,3.55,4.37,GL);ubox(g,.05,.9,1.4,2.57,3.55,3.4,GL);
+  ubox(g,.9,.12,.7,2.1,2.0,4.4,S);ubox(g,.9,.12,.7,2.1,2.6,4.4,S);
+  const body=new T.Group();ubox(body,4.9,.2,7.4,0,2.6,-1.9,Y);ubox(body,.2,1.7,7.4,2.35,3.45,-1.9,Y);ubox(body,.2,1.7,7.4,-2.35,3.45,-1.9,Y);ubox(body,4.9,2.1,.2,0,3.55,1.7,Y);ubox(body,4.9,.15,3.0,0,4.55,3.1,Y);g.add(body);
+  [[-2.5,3.6],[2.5,3.6]].forEach(([x,z])=>uwheel(g,x,1.65,z,1.65,1.2,TR,RM));
+  [[-1.95,-3.7],[-2.95,-3.7],[1.95,-3.7],[2.95,-3.7]].forEach(([x,z])=>uwheel(g,x,1.65,z,1.65,.95,TR,RM));
+  [-1.3,1.3].forEach(x=>{ulimb(g,[x,1.9,-2.2],[x,2.5,-3.9],.17,S);ulimb(g,[x*1.46,1.2,3.6],[x*1.46,2.5,3.6],.2,S)});
+  ulimb(g,[1.0,2.0,-1.2],[1.0,2.05,-3.4],.055,UM(UC.hose));ulimb(g,[1.5,2.0,-1.2],[1.5,2.05,-3.4],.055,UM(UC.hose));ubox(g,.5,.25,.3,1.25,2.1,-2.3,UM(UC.clamp,{metalness:.8}));
+  ulimb(g,[0,1.5,2.6],[0,1.5,-3.0],.12,S);
+  return g}
+function buildExcModel(){const g=new T.Group(),Y=UM(UC.yellow),D=UM(UC.dark),S=UM(UC.steel),GL=UM(UC.glass,{metalness:.2,roughness:.2});
+  [-2.3,2.3].forEach(x=>{ubox(g,1.0,1.5,6.0,x,.75,0,D);for(let i=0;i<8;i++)ubox(g,1.08,.12,.5,x,1.52,-2.6+i*.75,UM('#3a3d42'))});
+  ubox(g,3.6,1.0,3.6,0,1.5,0,D);const sw=new T.Mesh(new T.CylinderGeometry(1.9,1.9,.35,32),S);sw.position.y=2.15;g.add(sw);
+  ubox(g,4.0,.4,6.0,0,2.5,-.2,Y);ubox(g,3.2,1.9,2.8,0,3.65,-1.7,Y);ubox(g,3.6,1.7,1.2,0,3.0,-3.5,D);
+  ubox(g,1.6,1.9,1.9,1.2,3.9,2.2,Y);ubox(g,1.4,.9,.05,1.2,4.1,3.17,GL);
+  ulimb(g,[0,2.9,2.4],[0,6.3,6.2],.42,Y);ulimb(g,[0,3.1,3.0],[0,5.4,5.3],.2,S);
+  ulimb(g,[0,6.3,6.2],[0,3.4,9.2],.33,Y);ulimb(g,[0,6.7,6.1],[0,5.0,8.2],.18,S);
+  ubox(g,2.4,1.4,1.7,0,2.6,9.6,UM('#4a4e54'));
+  [0,1].forEach(i=>ulimb(g,[.3+i*.15,3.3,2.6],[.3+i*.15,6.0,6.0],.05,UM(UC.hose)));
+  return g}
+function buildGenModel(kind){const g=new T.Group(),Y=UM(UC.yellow),D=UM(UC.dark),TR=UM(UC.tire,{metalness:0,roughness:.95}),RM=UM(UC.rim);
+  ubox(g,2.6,1.4,5.2,0,1.7,0,Y);ubox(g,2.0,1.6,1.8,0,3.0,.8,Y);ubox(g,3.6,.7,.5,0,1.2,3.4,D);
+  if(/Dozer/.test(kind)){[-1.3,1.3].forEach(x=>ubox(g,.9,1.2,4.4,x,.6,0,D))}else[[-1.4,1.8],[1.4,1.8],[-1.4,-1.8],[1.4,-1.8]].forEach(([x,z])=>uwheel(g,x,1.0,z,1.0,.9,TR,RM));
+  return g}
+const A_TRUCK={'Body & Bak/Floor & Side Liner':[[0,2.8,-2.2],'Bak: lantai dan dinding'],'Body & Bak/Body Pivot':[[0,2.2,-5.4],'Engsel bak di belakang'],'Body & Bak/Canopy & Tepi':[[0,4.6,3.2],'Canopy di atas kabin'],
+ 'Hoist/Hoist Cylinder':[[1.3,2.2,-3.0],'Silinder hoist di bawah bak'],'Hoist/Hoist Hose':[[1.25,2.1,-2.3],'Hose hoist, di bawah bak sisi kiri'],'Hoist/Hose Hoist':[[1.25,2.1,-2.3],'Hose hoist, di bawah bak sisi kiri'],
+ 'Suspensi/Front Strut':[[1.9,2.2,3.6],'Strut suspensi depan'],'Suspensi/Rear Suspension':[[1.9,1.9,-3.5],'Suspensi belakang'],'Suspensi/Steering':[[0,1.5,4.0],'Sistem kemudi depan'],
+ 'Roda & Ban/Ban':[[2.9,1.7,-3.7],'Ban belakang'],'Roda & Ban/Roda & Rim':[[2.5,1.7,3.6],'Roda dan rim depan'],'Rem/Rem Hidrolik':[[2.2,1.6,-3.5],'Rem roda belakang'],
+ 'Penggerak/Drive Shaft':[[0,1.5,-.5],'Poros penggerak'],'Mesin & Pendingin/Radiator & Fan':[[0,2.5,5.0],'Radiator dan fan di depan'],'Mesin & Pendingin/Sabuk':[[0,2.5,4.7],'Ruang mesin depan'],'Mesin & Pendingin/Exhaust':[[1.0,3.4,5.0],'Knalpot dan turbo'],
+ 'Kabin & Struktur/Akses':[[2.1,2.3,4.4],'Tangga dan akses kabin'],'Kabin & Struktur/Kaca & Lampu':[[1.6,3.9,4.4],'Kaca dan lampu kabin'],'Kelistrikan/Harness':[[0,2.0,2.5],'Harness kabel sepanjang rangka']};
+const A_EXC={'Attachment/Bucket':[[0,2.6,9.6],'Bucket di ujung attachment'],'Attachment/Boom & Arm':[[0,5.2,5.6],'Boom dan arm'],'Attachment/Ripper':[[0,.6,3.4],'Ripper di belakang'],'Attachment/Blade':[[0,1.2,3.6],'Blade di depan'],
+ 'Undercarriage/Track':[[2.3,.9,1.0],'Track sisi kiri'],'Undercarriage/Roller & Idler':[[2.3,.7,-2.2],'Roller dan sprocket'],'Swing & Body/Swing':[[0,2.2,0],'Swing bearing'],'Swing & Body/Counterweight':[[0,3.0,-3.5],'Counterweight di belakang'],
+ 'Hidrolik/Hose & Line':[[.4,4.4,4.2],'Hose hidrolik di sepanjang boom'],'Mesin & Pendingin/Fan & Radiator':[[0,3.6,-1.7],'Ruang mesin dan radiator'],'Kabin/Kabin':[[1.2,3.9,2.8],'Kabin operator']};
+const UMODEL={Truck:{build:buildTruckModel,A:A_TRUCK,fallback:[[0,2.4,0],'Rangka utama']},Exc:{build:buildExcModel,A:A_EXC,fallback:[[0,3.0,0],'Bodi utama']},Gen:{build:null,A:{},fallback:[[0,2.0,0],'Bodi unit']}};
+const USCALE={hd785:1,cat777:.93,pc1250:1,pc2000:1.25,pc400:.6,pc200:.45,d375:.8,gd825:.9,wa600:.85};
+function modelTypeOf(u){return u&&u.kind==='Dump truck'?'Truck':u&&u.kind==='Excavator'?'Exc':'Gen'}
+function anchorFor(unit,p){const mt=UMODEL[modelTypeOf(unit)],k=(p.system||'')+'/'+(p.asm||'');let a=mt.A[k];
+  if(!a){const f=Object.keys(mt.A).find(x=>x.split('/')[0]===p.system);a=f?mt.A[f]:mt.fallback}return {pos:a[0].slice(),zone:a[1]}}
+const SIDE=x=>Math.abs(x)<.2?'di sumbu tengah':(x>0?'kiri':'kanan');
+class UnitViewer{
+  constructor(el){this.el=el;this.r=new T.WebGLRenderer({antialias:true});this.r.setPixelRatio(Math.min(devicePixelRatio||1,2));this.r.setClearColor(0x080b0e,1);this.r.toneMapping=T.ACESFilmicToneMapping;this.r.toneMappingExposure=1.4;
+    el.insertBefore(this.r.domElement,el.firstChild);this.scene=new T.Scene();setupEnv(this.r,this.scene);addLights(this.scene);
+    this.cam=new T.PerspectiveCamera(38,1,.1,300);this.th=.9;this.ph=1.15;this.dist=22;this.ctr=new T.Vector3(0,2.5,0);this.mode='free';this.spin=true;this.xray=false;this.pulse=0;
+    const gr=new T.GridHelper(80,40,0x14313a,0x0f2229);this.scene.add(gr);this.model=null;this.mk=new T.Group();this.scene.add(this.mk);
+    this.lbl=el.querySelector('.ulabel');this.bind();this.resize();new ResizeObserver(()=>this.resize()).observe(el);this.loop=this.loop.bind(this);requestAnimationFrame(this.loop)}
+  bind(){const c=this.r.domElement;let d=null;c.style.touchAction='none';
+    c.addEventListener('pointerdown',e=>{d={x:e.clientX,y:e.clientY};c.setPointerCapture(e.pointerId);if(this.mode==='fly')this.finishFly()});
+    c.addEventListener('pointermove',e=>{if(!d)return;this.th-=(e.clientX-d.x)*.008;this.ph=Math.min(2.6,Math.max(.3,this.ph-(e.clientY-d.y)*.006));d={x:e.clientX,y:e.clientY};this.drag=performance.now()});
+    const up=()=>{d=null};c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+    c.addEventListener('wheel',e=>{e.preventDefault();this.dist=Math.min(60,Math.max(5,this.dist*(1+e.deltaY*.001)))},{passive:false})}
+  resize(){const w=this.el.clientWidth,h=this.el.clientHeight;if(!w||!h)return;this.r.setSize(w,h,false);this.cam.aspect=w/h;this.cam.updateProjectionMatrix()}
+  setUnit(unit,marks){this.uid=unit.id;
+    const cu=(typeof CUSTOM!=='undefined')&&CUSTOM[unit.id];const key=unit.id+(cu?':'+cu.v:'');if(this.key!==key){if(this.model)this.scene.remove(this.model);const mt=UMODEL[modelTypeOf(unit)];const root=new T.Group();const m=(mt.build||(()=>buildGenModel(unit.kind)))();root.add(m);
+      const s=USCALE[unit.id]||1;root.scale.setScalar(s);this.sbb=new T.Box3().setFromObject(root);this.s=s;let top=root;
+      if(cu){top=cu.group;this.s=1}this.scene.add(top);this.model=top;this.custom=!!cu;this.key=key;
+      const bb=new T.Box3().setFromObject(top);this.bb=bb;this.size=bb.getSize(new T.Vector3());this.cen=bb.getCenter(new T.Vector3());
+      if(this.person)this.scene.remove(this.person);const P=new T.Group(),pm=UM('#7fa0b3',{metalness:0,roughness:.8});const b=new T.Mesh(new T.CylinderGeometry(.22,.2,1.3,12),pm);b.position.y=.95;P.add(b);const h=new T.Mesh(new T.SphereGeometry(.14,12,10),pm);h.position.y=1.72;P.add(h);
+      P.position.set(bb.max.x+1.6,0,this.cen.z+this.size.z*.28);this.scene.add(P);this.person=P;this.dist=Math.max(this.size.x,this.size.z)*1.6+6;this.ctr.set(this.cen.x,this.size.y*.42,this.cen.z);this.setX(this.xray)}
+    this.mk.clear();this.marks=marks.map(k=>({...k,w:this.worldOf(k)}));
+    this.marks.forEach(k=>{const col=k.main?0xffb000:0x36d6e7,sz=k.main?.28:.16;const sp=new T.Mesh(new T.SphereGeometry(sz,18,14),new T.MeshBasicMaterial({color:col,depthTest:false,transparent:true,opacity:.95}));sp.position.copy(k.w);sp.renderOrder=10;this.mk.add(sp);
+      if(k.main){const ring=new T.Mesh(new T.RingGeometry(.5,.58,40),new T.MeshBasicMaterial({color:col,side:T.DoubleSide,depthTest:false,transparent:true,opacity:.9}));ring.rotation.x=-Math.PI/2;ring.position.copy(k.w);ring.renderOrder=10;this.ring=ring;this.mk.add(ring);
+        const beam=new T.Mesh(new T.CylinderGeometry(.03,.03,4,8),new T.MeshBasicMaterial({color:col,depthTest:false,transparent:true,opacity:.7}));beam.position.set(k.w.x,k.w.y+2,k.w.z);beam.renderOrder=10;this.mk.add(beam)}});
+    this.main=this.marks.find(k=>k.main)||this.marks[0]}
+  worldOf(k){const ov=this.custom&&typeof ANCH!=='undefined'&&ANCH[this.uid+'|'+k.key];if(ov)return new T.Vector3(...ov);const w=new T.Vector3(...k.pos).multiplyScalar(USCALE[this.uid]||1);
+    if(this.custom&&this.sbb){const a=this.sbb,b=this.bb,sz=a.getSize(new T.Vector3());const u=w.clone().sub(a.min);u.x/=sz.x||1;u.y/=sz.y||1;u.z/=sz.z||1;const bs=b.getSize(new T.Vector3());return new T.Vector3(b.min.x+u.x*bs.x,b.min.y+u.y*bs.y,b.min.z+u.z*bs.z)}return w}
+  setX(v){this.xray=v;if(!this.model)return;this.model.traverse(o=>{if(o.isMesh){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{m.transparent=v;m.opacity=v?.22:1;m.depthWrite=!v})}})}
+  play(){if(!this.main)return;this.mode='fly';this.t0=performance.now();this.dur=4800;
+    const a=this.main.w,out=a.clone().sub(this.ctr);out.y=0;if(out.length()<.1)out.set(1,0,1);out.normalize();
+    this.fromPos=a.clone().add(out.multiplyScalar(2.4)).add(new T.Vector3(0,1.0,0));this.fromTgt=a.clone();this.farTh=.9;this.farPh=1.15;this.farDist=Math.max(this.size.x,this.size.z)*1.6+6;this.onFly&&this.onFly(true)}
+  finishFly(){this.mode='free';this.th=this.farTh;this.ph=this.farPh;this.dist=this.farDist;this.onFly&&this.onFly(false)}
+  loop(now){const t=now*.001;this.pulse=t;
+    if(this.ring){const k=1+((t*.9)%1)*1.6;this.ring.scale.set(k,k,k);this.ring.material.opacity=.9*(1-((t*.9)%1))}
+    if(this.mode==='fly'){const u=Math.min(1,(now-this.t0)/this.dur),e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+      const far=new T.Vector3(Math.sin(this.farTh)*Math.sin(this.farPh)*this.farDist,Math.cos(this.farPh)*this.farDist,Math.cos(this.farTh)*Math.sin(this.farPh)*this.farDist).add(this.ctr);
+      this.cam.position.lerpVectors(this.fromPos,far,e);const tg=this.fromTgt.clone().lerp(this.ctr,e);this.cam.lookAt(tg);this.onProg&&this.onProg(u);if(u>=1)this.finishFly()}
+    else{if(this.spin&&(!this.drag||now-this.drag>2500))this.th+=.0035;
+      this.cam.position.set(Math.sin(this.th)*Math.sin(this.ph)*this.dist,Math.cos(this.ph)*this.dist,Math.cos(this.th)*Math.sin(this.ph)*this.dist).add(this.ctr);this.cam.lookAt(this.ctr)}
+    if(this.lbl&&this.main){const v=this.main.w.clone().add(new T.Vector3(0,.9,0)).project(this.cam);const ok=v.z<1;const w=this.el.clientWidth,h=this.el.clientHeight;
+      this.lbl.style.display=ok?'block':'none';this.lbl.style.transform=`translate(${(v.x*.5+.5)*w}px,${(-v.y*.5+.5)*h}px) translate(-50%,-100%)`}
+    this.r.render(this.scene,this.cam);requestAnimationFrame(this.loop)}
+}
+/* ===== BAGIAN 5: SIMULASI LOKASI DI UNIT ===== */
+let uviewer=null,autoPlayed=false;
+const fmt=n=>n.toFixed(1).replace('.',',');
+var updateUnitSection=function(){
+  if(!result)return;const r=result.rows[sel],p=r.p,unit=UNITS.find(x=>x.id===p.unitId);if(!unit)return;
+  $('unitSec').hidden=false;
+  if(!uviewer){uviewer=new UnitViewer($('uvp'));uviewer.onProg=u=>{$('uprog').firstElementChild.style.width=(u*100)+'%'};
+    uviewer.onFly=f=>{$('uHud').textContent=f?'MODE: TERBANG DARI PART KE UNIT':'MODE: ORBIT BEBAS';document.querySelector('#uvp [data-u="play"]').classList.toggle('on',f)};
+    typeof initCustomUI==='function'&&initCustomUI(uviewer);if('IntersectionObserver' in window)new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&!autoPlayed&&result){autoPlayed=true;uviewer.play()}})},{threshold:.45}).observe($('unitSec'))}
+  const a=anchorFor(unit,p),marks=[{pos:a.pos,main:true,key:(p.system||'')+'/'+(p.asm||'')}];const seen=[a.pos.join()];
+  result.rows.slice(0,6).forEach((x,i)=>{if(i===sel||x.p.unitId!==p.unitId)return;const b=anchorFor(unit,x.p);if(!seen.includes(b.pos.join())){seen.push(b.pos.join());marks.push({pos:b.pos,main:false,key:(x.p.system||'')+'/'+(x.p.asm||'')})}});
+  uviewer.setUnit(unit,marks);
+  $('ulabel').innerHTML=`<b>${esc(p.name)}</b><span>${esc(a.zone)}</span>`;
+  const m=uviewer.main.w,cen=uviewer.cen,sz=uviewer.size,dx=m.x-cen.x,dz=m.z-cen.z;
+  const sameAsm=PARTS.filter(x=>x.unitId===p.unitId&&x.system===p.system&&x.asm===p.asm&&x.id!==p.id);
+  $('uMeta').textContent=`${unit.name} · skala perkiraan`;
+  $('uHudR').textContent=`PANJANG ${fmt(sz.z)} M · LEBAR ${fmt(sz.x)} M · TINGGI ${fmt(sz.y)} M`;
+  $('uinfoPane').innerHTML=`<div class="chips"><span class="chip on">${esc(unit.name)}</span><span class="chip">${esc(unit.kind)}</span><span class="chip ${r.conf>.25?'ok':'warn'}">hipotesis #${sel+1}</span></div>
+  <div><b style="font:700 18px var(--f-display)">${esc(p.name)}</b><div class="hint">${esc(p.system||'')} › ${esc(p.asm||'')}</div></div>
+  <dl class="diag" style="grid-template-columns:1fr 1fr;border:1px solid var(--line)"><div><dt>Zona</dt><dd>${esc(a.zone)}</dd></div><div><dt>Tinggi dari tanah</dt><dd>${fmt(m.y)} m</dd></div>
+   <div><dt>Samping</dt><dd>${SIDE(dx)==='di sumbu tengah'?'di sumbu tengah':fmt(Math.abs(dx))+' m ke '+SIDE(dx)}</dd></div><div><dt>Depan / belakang</dt><dd>${fmt(Math.abs(dz))} m ke ${dz>=0?'depan':'belakang'}</dd></div></dl>
+  <div class="hint">Titik amber adalah lokasi part hipotesis ini. Titik cyan adalah kandidat lain di unit yang sama. Figur manusia setinggi 1,75 m menjadi pembanding skala.</div>
+  ${sameAsm.length?`<div class="hint"><b>Part lain di assembly yang sama (${sameAsm.length}):</b> ${sameAsm.slice(0,5).map(x=>esc(x.name)).join(', ')}${sameAsm.length>5?'…':''}</div>`:''}
+  <div class="hint">${uviewer.custom?'Model 3D milik Anda dipakai. Posisi part dipetakan dari zona skematik ke ukuran model Anda, jadi gunakan Set lokasi part untuk menempatkannya tepat.':'Model unit dan posisi part berasal dari peta zona skematik, bukan gambar CAD.'} Ukur ulang dengan parts book sebelum dipakai untuk inspeksi.</div>`}
+$('uvp').querySelector('.ctl').addEventListener('click',e=>{const b=e.target.closest('[data-u]');if(!b||!uviewer)return;const k=b.dataset.u;
+  if(k==='play')uviewer.play();else if(k==='xray'){uviewer.setX(!uviewer.xray);b.classList.toggle('on',uviewer.xray)}else if(k==='spin'){uviewer.spin=!uviewer.spin;b.classList.toggle('on',uviewer.spin)}});
+document.addEventListener('click',e=>{if(e.target.closest('#goUnit')){$('unitSec').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{autoPlayed=true;uviewer&&uviewer.play()},650)}});
+/* ===== MODEL 3D MILIK SENDIRI (GLB / GLTF / DAE / ZIP) ===== */
+const CUSTOM={},ANCH={};let cmBusy=false,cmPick=false;
+const LDR='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/';
+const loadScript=(src)=>new Promise((res,rej)=>{if(document.querySelector('script[data-s="'+src+'"]'))return res();const s=document.createElement('script');s.src=src;s.dataset.s=src;s.onload=res;s.onerror=()=>rej(new Error('Gagal memuat '+src));document.head.appendChild(s)});
+/* IndexedDB, dengan fallback memori */
+const idb={db:null,mem:{},async open(){if(this.db)return this.db;try{this.db=await new Promise((res,rej)=>{const q=indexedDB.open('ct-models',1);q.onupgradeneeded=()=>q.result.createObjectStore('m');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}catch(e){this.db=null}return this.db},
+ async get(k){const d=await this.open();if(!d)return this.mem[k];return new Promise(r=>{try{const q=d.transaction('m').objectStore('m').get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r()}catch(e){r()}})},
+ async set(k,v){const d=await this.open();if(!d){this.mem[k]=v;return}return new Promise(r=>{try{const t=d.transaction('m','readwrite');t.objectStore('m').put(v,k);t.oncomplete=()=>r();t.onerror=()=>r()}catch(e){r()}})},
+ async del(k){const d=await this.open();if(!d){delete this.mem[k];return}return new Promise(r=>{try{const t=d.transaction('m','readwrite');t.objectStore('m').delete(k);t.oncomplete=()=>r();t.onerror=()=>r()}catch(e){r()}})}};
+const baseName=u=>decodeURIComponent(String(u).split(/[?#]/)[0]).split(/[\\/]/).pop().toLowerCase();
+async function expandFiles(files){const out=[];for(const f of files){if(/\.zip$/i.test(f.name)){await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');const z=await JSZip.loadAsync(f.blob||f);for(const [n,e] of Object.entries(z.files)){if(e.dir||/__MACOSX/.test(n))continue;out.push({name:n.split('/').pop(),blob:await e.async('blob')})}}else out.push({name:f.name,blob:f.blob||f})}return out}
+
+/* Ikat tekstur PBR berdasarkan nama material (mis. MainMat_albedo.jpg) bila file model tidak memuat referensi tekstur */
+function bindPBR(root,urls){const names=Object.keys(urls),cache={};
+  const tex=(n)=>{if(!n)return null;if(cache[n])return cache[n];const t=new THREE.TextureLoader().load(urls[n]);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return cache[n]=t};
+  const find=(m,keys)=>{const b=m.toLowerCase();return names.find(n=>n.startsWith(b+'_')&&keys.some(k=>n.slice(b.length+1).startsWith(k)))};
+  let hit=0;root.traverse(o=>{if(!o.isMesh)return;const ms=Array.isArray(o.material)?o.material:[o.material];
+    const nm=ms.map(m=>{if(!m||!m.name||m.map)return m;const al=find(m.name,['albedo','basecolor','base_color','diffuse','color']);if(!al)return m;
+      const n=new THREE.MeshStandardMaterial({name:m.name,color:0xffffff,map:tex(al),roughness:1,metalness:1,side:THREE.DoubleSide});
+      const nr=find(m.name,['normal']),rg=find(m.name,['rough']),mt=find(m.name,['metal']),op=find(m.name,['opacity','alpha']),em=find(m.name,['emissive']);
+      if(nr)n.normalMap=tex(nr);if(rg)n.roughnessMap=tex(rg);else n.roughness=.6;if(mt)n.metalnessMap=tex(mt);else n.metalness=.2;
+      if(op){n.alphaMap=tex(op);n.transparent=true;n.depthWrite=false}if(em){n.emissiveMap=tex(em);n.emissive=new THREE.Color(0xffffff)}
+      hit++;return n});
+    o.material=Array.isArray(o.material)?nm:nm[0]});return hit}
+async function buildCustom(files,o){
+  const mf=files.find(f=>/\.(glb|gltf|dae)$/i.test(f.name));
+  if(!mf){if(files.some(f=>/\.(rar|7z|obj|fbx|skp)$/i.test(f.name)))throw new Error('Format ini belum bisa dibaca di browser. Ekstrak RAR lalu pilih file .dae beserta folder teksturnya (atau zip-kan), atau ekspor ke .glb.');throw new Error('Tidak ada file .glb, .gltf, atau .dae.')}
+  const urls={};files.forEach(f=>{urls[f.name.toLowerCase()]=URL.createObjectURL(f.blob)});
+  const mgr=new THREE.LoadingManager();mgr.setURLModifier(u=>urls[baseName(u)]||u);
+  let scene;const ext=mf.name.split('.').pop().toLowerCase();
+  if(ext==='dae'){await loadScript(LDR+'ColladaLoader.js');scene=(await new Promise((res,rej)=>new THREE.ColladaLoader(mgr).load(urls[mf.name.toLowerCase()],res,undefined,rej))).scene}
+  else{await loadScript(LDR+'GLTFLoader.js');scene=(await new Promise((res,rej)=>new THREE.GLTFLoader(mgr).load(urls[mf.name.toLowerCase()],res,undefined,rej))).scene}
+  const pbr=bindPBR(scene,urls);const pivot=new THREE.Group();pivot.add(scene);
+  if(o.up==='z')scene.rotation.x=-Math.PI/2;else if(o.up==='-z')scene.rotation.x=Math.PI/2;
+  pivot.rotation.y=(o.yaw||0)*Math.PI/180;pivot.updateMatrixWorld(true);
+  let bb=new THREE.Box3().setFromObject(pivot),sz=bb.getSize(new THREE.Vector3());
+  if(o.auto!==false&&sz.x>sz.z*1.15){pivot.rotation.y+=Math.PI/2;pivot.updateMatrixWorld(true);bb.setFromObject(pivot);sz=bb.getSize(new THREE.Vector3())}
+  const k=(o.len||10)/(sz.z||1);const root=new THREE.Group();root.add(pivot);root.scale.setScalar(k);root.updateMatrixWorld(true);
+  bb=new THREE.Box3().setFromObject(root);const c=bb.getCenter(new THREE.Vector3());pivot.position.set(-c.x/k,-bb.min.y/k,-c.z/k);root.updateMatrixWorld(true);
+  let tri=0;root.traverse(m=>{if(m.isMesh){m.frustumCulled=false;const ms=Array.isArray(m.material)?m.material:[m.material];ms.forEach(x=>{if(x){x.side=THREE.DoubleSide;if(x.envMapIntensity!==undefined)x.envMapIntensity=1}});tri+=(m.geometry.index?m.geometry.index.count:m.geometry.attributes.position.count)/3}});
+  return {group:root,tri:Math.round(tri),pbr}}
+async function applyCustom(unit,rawFiles,o,save){
+  const files=await expandFiles(rawFiles);const r=await buildCustom(files,o);
+  CUSTOM[unit.id]={group:r.group,v:Date.now(),opts:o,tri:r.tri,pbr:r.pbr,files:files.map(f=>f.name)};
+  if(save)await idb.set('model:'+unit.id,{files,o});return r}
+async function loadAllCustom(){for(const u of UNITS){const rec=await idb.get('model:'+u.id);const an=await idb.get('anch');if(an&&!Object.keys(ANCH).length)Object.assign(ANCH,an);
+  if(rec&&!CUSTOM[u.id]){try{await applyCustom(u,rec.files.map(f=>({name:f.name,blob:f.blob})),rec.o,false)}catch(e){}}}
+  if(uviewer&&result)updateUnitSection()}
+function renderCM(unit){const el=$('cmPane');if(!el||!unit)return;const cu=CUSTOM[unit.id];
+  const L=((SPEC[unit.id]||{}).rows||[]).map(r=>r[0]&&/panjang/i.test(r[0])?parseFloat(String(r[1]).replace(',','.')):0).find(x=>x>3&&x<40)||(unit.kind==='Dump truck'?10.4:12);
+  el.innerHTML=`<details open><summary style="cursor:pointer;font:600 13px var(--f-display)">Model 3D milik Anda untuk ${esc(unit.name)}</summary>
+  <div class="hint" style="margin:8px 0">Pilih file .glb, .gltf, atau .dae beserta teksturnya, atau satu file .zip. File RAR harus diekstrak dulu. Model disimpan di browser ini.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+   <div style="grid-column:1/-1"><input type="file" id="cmFile" multiple accept=".glb,.gltf,.dae,.zip,.png,.jpg,.jpeg,.bin,.tga,.webp"></div>
+   <div><label>Panjang unit (m)</label><input id="cmLen" type="number" step="0.1" value="${cu?cu.opts.len:L}"></div>
+   <div><label>Sumbu atas model</label><select id="cmUp"><option value="y">Y (umum)</option><option value="z" ${cu&&cu.opts.up==='z'?'selected':''}>Z (Collada/Blender)</option><option value="-z">-Z</option></select></div>
+   <div><label>Putar arah depan</label><select id="cmYaw">${[0,90,180,270].map(d=>`<option value="${d}" ${cu&&cu.opts.yaw===d?'selected':''}>${d}°</option>`).join('')}</select></div>
+   <div style="align-self:end"><button class="btn pri" id="cmGo" ${cmBusy?'disabled':''}>Terapkan model</button></div></div>
+  <div class="hint" id="cmSt" style="margin-top:8px">${cu?`Aktif: ${esc(cu.files.slice(0,3).join(', '))}${cu.files.length>3?'…':''} · ${cu.tri.toLocaleString('id')} segitiga${cu.pbr?` · ${cu.pbr} material PBR`:''}`:'Belum ada model. Unit memakai model skematik.'}</div>
+  ${cu?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" id="cmPick">${cmPick?'Klik model untuk menaruh titik…':'Set lokasi part'}</button><button class="btn sm" id="cmRst">Kembali ke skematik</button></div>
+  <div class="hint">Set lokasi part: tekan tombol, lalu klik titik di model tempat part ini berada. Lokasi disimpan untuk assembly tersebut.</div>`:''}</details>`;
+  const st=m=>{$('cmSt').textContent=m};
+  $('cmGo').onclick=async()=>{const fl=[...$('cmFile').files];const rec=!fl.length&&await idb.get('model:'+unit.id);if(!fl.length&&!rec){st('Pilih file model dulu.');return}
+    cmBusy=true;st('Memuat model… untuk file besar bisa makan waktu.');$('cmGo').disabled=true;
+    try{const o={len:+$('cmLen').value||L,up:$('cmUp').value,yaw:+$('cmYaw').value};await applyCustom(unit,fl.length?fl:rec.files,o,true);toast('Model dimuat');updateUnitSection()}catch(e){st('Gagal: '+(e.message||e))}finally{cmBusy=false;renderCM(unit)}};
+  const rs=$('cmRst');if(rs)rs.onclick=async()=>{delete CUSTOM[unit.id];await idb.del('model:'+unit.id);uviewer.key=null;updateUnitSection()};
+  const pk=$('cmPick');if(pk)pk.onclick=()=>{cmPick=!cmPick;renderCM(unit)}}
+function initCustomUI(v){const c=v.r.domElement;let d0=null;const ray=new THREE.Raycaster(),m=new THREE.Vector2();
+  c.addEventListener('pointerdown',e=>{d0={x:e.clientX,y:e.clientY}},true);
+  c.addEventListener('pointerup',async e=>{if(!cmPick||!d0||Math.hypot(e.clientX-d0.x,e.clientY-d0.y)>5||!v.custom)return;
+    const r=c.getBoundingClientRect();m.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(m,v.cam);const h=ray.intersectObject(v.model,true)[0];if(!h)return;
+    const p=result.rows[sel].p,k=(p.system||'')+'/'+(p.asm||'');ANCH[v.uid+'|'+k]=[+h.point.x.toFixed(3),+h.point.y.toFixed(3),+h.point.z.toFixed(3)];await idb.set('anch',ANCH);cmPick=false;toast('Lokasi part disimpan');updateUnitSection()},true)}
+const _uu=updateUnitSection;updateUnitSection=function(){_uu();const u=UNITS.find(x=>x.id===result.rows[sel].p.unitId);renderCM(u)};
+idb.open().then(()=>loadAllCustom());
+/* ===== UMPAN BALIK: konfirmasi / koreksi hasil, foto temuan menjadi referensi ===== */
+function kindShare(r){return result.rows.filter(x=>x.p.kind===r.p.kind).reduce((a,x)=>a+x.conf,0)}
+async function learnFrom(partId){const imgs=photos.filter(x=>!/\(contoh\)$/.test(x.label)).map(x=>x.src);if(!imgs.length){toast('Foto contoh bawaan tidak dipakai sebagai referensi');return}
+  const e=store.data.extra[partId]||{photos:[],history:[]};e.photos=(e.photos||[]).concat(imgs).slice(-8);await store.set('extra',partId,e);toast(imgs.length+' foto ditambahkan sebagai referensi '+(PARTS.find(p=>p.id===partId)||{}).name)}
+var showSelected0=showSelected;
+showSelected=function(q){showSelected0(q);if(!result)return;const r=result.rows[sel],ks=kindShare(r),al=$('alert');
+  const weak=ks<.4||r.vis<.5;
+  let h=weak?`<div class="hint" style="flex-basis:100%;color:var(--warn)">Hasil ini ambigu: peluang jenis part hanya ${(ks*100)|0}% dan banyak part serupa di unit berbeda. Tambah foto dari sudut lain, isi ukuran, atau cek apakah part ini sudah ada di basis data. Jika belum, tambahkan di Basis Data lalu foto temuan ini dipakai sebagai referensinya.</div>`:'';
+  if(ROLE!=='viewer'){const alts=result.rows.slice(0,6).map((x,i)=>i===sel?'':`<option value="${x.p.id}">${esc(x.p.name)} · ${esc((UNITS.find(u=>u.id===x.p.unitId)||{}).name||'')}</option>`).join('');
+    h+=`<div style="flex-basis:100%;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="hint">Apakah hasil ini benar?</span><button class="btn sm" id="fbOk">Benar, simpan foto sebagai referensi</button><select id="fbAlt" style="width:auto;padding:6px 12px"><option value="">Bukan, pilih part lain…</option>${alts}</select></div>`}
+  al.insertAdjacentHTML('beforeend',h);al.style.flexWrap='wrap';
+  const ok=$('fbOk');if(ok)ok.onclick=()=>learnFrom(r.p.id);const alt=$('fbAlt');if(alt)alt.onchange=()=>{if(alt.value)learnFrom(alt.value)}};
+</script>
