@@ -9,14 +9,14 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from core import db
+from core import db, models, theme
 
 META = db.meta()
 KINDS = list(META["kind_label"].keys())
-st.title("Katalog unit dan part")
+theme.hero("Katalog unit dan part","Unit, sistem, assembly, part, foto referensi, dan model 3D unit.")
 units = db.list_units()
 by_id = {u["id"]: u for u in units}
-tab_part, tab_unit, tab_photo, tab_ops, tab_export = st.tabs(["Part", "Unit & spesifikasi", "Foto referensi", "Operasi harian", "Ekspor"])
+tab_part, tab_unit, tab_photo, tab_model, tab_ops, tab_export = st.tabs(["Part", "Unit & spesifikasi", "Foto referensi", "Model 3D", "Operasi harian", "Ekspor"])
 
 with tab_part:
     uid = st.selectbox("Unit", [u["id"] for u in units], format_func=lambda i: f'{by_id[i]["name"]} ({by_id[i]["kind"]})', key="cat_unit")
@@ -97,6 +97,49 @@ with tab_photo:
         existing = [dict(r) for r in con.execute("SELECT file FROM photos WHERE part_id=? AND role='ref'", (pid,))]
     if existing:
         st.image([str(db.DATA / e["file"]) for e in existing if (db.DATA / e["file"]).exists()], width=150)
+
+with tab_model:
+    st.markdown("Unggah model 3D unit **sekali**. File disimpan di `static/models/<unit>/` dan dibaca semua pengguna. "
+                "Di Streamlit Community Cloud disk tidak permanen, jadi commit folder itu ke GitHub agar model tetap ada.")
+    mid = st.selectbox("Unit", [u["id"] for u in units], format_func=lambda i: by_id[i]["name"], key="mdl_unit")
+    cfg = models.get(mid)
+    if cfg:
+        st.success(f'Model aktif: {cfg["file"]} ({len(cfg["files"])} file). Panjang {cfg["opts"]["len"]} m, sumbu atas {cfg["opts"]["up"]}, putar {cfg["opts"]["yaw"]} derajat.')
+    else:
+        st.info("Unit ini belum punya model. Yang tampil adalah model skematik.")
+    ups = st.file_uploader("File .glb, .gltf, atau .dae beserta tekstur, atau satu .zip (RAR harus diekstrak dulu)",
+                           accept_multiple_files=True, key=f"mdl_up_{mid}")
+    c1, c2, c3 = st.columns(3)
+    cur = (cfg or {}).get("opts", models.DEFAULT_OPTS)
+    mlen = c1.number_input("Panjang unit (m)", 3.0, 40.0, float(cur["len"]), 0.1, key=f"mdl_len_{mid}")
+    mup = c2.selectbox("Sumbu atas model", ["y", "z", "-z"], index=["y", "z", "-z"].index(cur["up"]), key=f"mdl_up2_{mid}")
+    myaw = c3.selectbox("Putar arah depan", [0, 90, 180, 270], index=[0, 90, 180, 270].index(int(cur["yaw"])), key=f"mdl_yaw_{mid}")
+    b1, b2, _ = st.columns([1, 1, 3])
+    if b1.button("Simpan model", type="primary", disabled=not ups and not cfg):
+        try:
+            o = {"len": mlen, "up": mup, "yaw": myaw}
+            if ups:
+                models.save(mid, [(f.name, f.getvalue()) for f in ups], o)
+            else:
+                models.set_options(mid, opts=o)
+            st.toast("Model tersimpan")
+            st.rerun()
+        except Exception as e:  # noqa: BLE001
+            st.error(str(e))
+    if cfg and b2.button("Hapus model"):
+        models.delete(mid)
+        st.rerun()
+    if cfg:
+        st.subheader("Lokasi part pada model")
+        st.caption("Isi koordinat meter (x kiri, y atas, z depan) dari hasil klik Set lokasi part di Tracker. Kunci: Sistem/Assembly, mis. Hoist/Hose Hoist.")
+        arows = [{"kunci": k, "x": v[0], "y": v[1], "z": v[2]} for k, v in cfg["anch"].items()]
+        aed = st.data_editor(pd.DataFrame(arows or [{"kunci": "", "x": 0.0, "y": 0.0, "z": 0.0}]), num_rows="dynamic",
+                             hide_index=True, use_container_width=True, key=f"mdl_anch_{mid}")
+        if st.button("Simpan lokasi part"):
+            an = {str(r["kunci"]).strip(): [float(r["x"]), float(r["y"]), float(r["z"])]
+                  for r in aed.to_dict("records") if str(r.get("kunci") or "").strip()}
+            models.set_options(mid, anch=an)
+            st.toast("Lokasi part tersimpan")
 
 with tab_ops:
     st.write("Data dispatch dipakai untuk menentukan nomor lambung yang beroperasi di area pada tanggal temuan. "

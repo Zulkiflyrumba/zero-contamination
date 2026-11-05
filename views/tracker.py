@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from core import db
+from core import db, models, theme
 
 HTML = ROOT / "web" / "tracker.html"
 WRAP = ('<!doctype html><html><head><meta charset="utf-8">'
@@ -26,7 +26,10 @@ def build_html(payload: dict) -> str:
     return WRAP.format(_template().replace("__CT_BOOT__", data))
 
 
-st.title("Contamination Tracker")
-st.caption("Unggah foto temuan kontaminan, lihat peringkat part dan unit sumber, lalu simulasikan lokasinya di unit 3D.")
 payload = db.export_payload()
+payload["models"] = models.manifest()
+if any((ROOT / "assets" / n).exists() for n in ("hero.jpg", "hero.png")):
+    uri = theme.hero_data_uri()
+    if uri:
+        payload["hero"] = uri
 components.html(build_html(payload), height=1900, scrolling=True)

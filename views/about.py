@@ -1,6 +1,12 @@
+import sys
+from pathlib import Path
+
 import streamlit as st
 
-st.title("Tentang")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from core import theme
+
+theme.hero("Tentang","Cara kerja, batasan, dan sumber data platform ini.")
 st.markdown(
     """
 **Contamination Tracker** membantu tim QC menelusuri sumber kontaminan logam dan non-logam di PIT dan ROM.

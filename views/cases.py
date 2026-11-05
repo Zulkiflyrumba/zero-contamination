@@ -8,10 +8,10 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from core import db
+from core import db, theme
 
 META = db.meta()
-st.title("Inspeksi dan kasus")
+theme.hero("Inspeksi dan kasus","Status part per nomor lambung dan catatan temuan yang sudah ditelusuri.")
 units = db.list_units()
 by_id = {u["id"]: u for u in units}
 t_ins, t_case = st.tabs(["Inspeksi per nomor lambung", "Riwayat kasus"])
