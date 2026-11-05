@@ -152,3 +152,4 @@ with t4:
             fa = [f for f in (k.imgs_find or "").split("|") if f and os.path.exists(f)]; fb = [f for f in (k.imgs_src or "").split("|") if f and os.path.exists(f)]
             if fa: ca.image(fa, width=240, caption="Temuan")
             if fb: cb.image(fb, width=240, caption="Sumber / investigasi")
+
