@@ -52,6 +52,9 @@ PART_COLUMNS = ["id", "unit_id", "name", "part_no", "system", "asm", "kind", "ty
                 "l", "w", "h", "qty", "fm", "incidents", "note", "color"]
 
 
+SEED_VERSION = 2
+
+
 def db_path() -> Path:
     return Path(os.environ.get("CT_DB_PATH", DATA / "tracker.db"))
 
@@ -75,6 +78,25 @@ def init_db(path: str | Path | None = None) -> None:
         con.executescript(SCHEMA)
         if con.execute("SELECT COUNT(*) FROM units").fetchone()[0] == 0 and SEED.exists():
             _seed(con)
+            con.execute(f"PRAGMA user_version={SEED_VERSION}")
+        elif con.execute("PRAGMA user_version").fetchone()[0] < SEED_VERSION and SEED.exists():
+            _sync_new_parts(con)
+            con.execute(f"PRAGMA user_version={SEED_VERSION}")
+
+
+def _sync_new_parts(con: sqlite3.Connection) -> None:
+    """Add seed parts that older databases do not have yet (never touches existing rows)."""
+    cat = json.loads(SEED.read_text(encoding="utf-8"))
+    for p in cat["parts"]:
+        if con.execute("SELECT 1 FROM parts WHERE id=?", (p["id"],)).fetchone():
+            continue
+        con.execute(
+            "INSERT INTO parts(id,unit_id,name,part_no,system,asm,kind,type,material,l,w,h,qty,fm,incidents,note,color)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (p["id"], p["unitId"], p["name"], p.get("partNo", "—"), p.get("system", "Lainnya"),
+             p.get("asm", "Umum"), p["kind"], p["type"], p.get("material", "—"), p["L"], p["W"], p["H"],
+             p.get("qty", 1), 1 if p.get("fm", True) else 0, p.get("incidents", 0), p.get("note", ""),
+             p.get("color", "#5d636a")))
 
 
 def _seed(con: sqlite3.Connection) -> None:

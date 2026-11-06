@@ -10,6 +10,7 @@ dan simulasi lokasi part di unit berskala besar.
 - Kecocokan visual di browser (siluet, rasio, warna, lubang, tekstur) digabung dengan ukuran, jenis, area, dan riwayat insiden.
 - Simulasi lokasi part di unit. Model skematik bawaan, atau unggah model 3D sendiri (.glb, .gltf, .dae + tekstur, atau .zip) dan tempatkan titik part dengan klik.
 - Konfirmasi atau koreksi hasil: foto temuan menjadi referensi part (di versi artifact/web mandiri).
+- 114 komponen lapangan HD785-7 (depan, mesin kiri/kanan, sisi kiri, bawah vessel, atas deck, belakang) dari panduan OTD KPC-S 2010, lengkap dengan zona lokasi di model 3D. Database lama otomatis ikut menerima part baru ini.
 - Kasus nyata HD785 #512 (hose clamp) sebagai contoh validasi.
 
 ## Model 3D unit (sekali unggah, tersimpan di repo)

@@ -8,7 +8,7 @@ from core import db
 def test_seed(dbp):
     p = db.export_payload()
     assert len(p["units"]) == 9
-    assert len(p["parts"]) >= 190
+    assert len(p["parts"]) >= 300
     assert any(c["builtin"] for c in p["cases"])
     assert "hd785" in p["spec"]
 
@@ -48,3 +48,14 @@ def test_add_photo(dbp):
     name = db.add_photo("p29", buf.getvalue())
     assert name.endswith(".jpg")
     assert (db.PHOTO_DIR / name).exists()
+
+
+def test_old_db_gets_new_seed_parts(tmp_path, monkeypatch):
+    monkeypatch.setenv("CT_DB_PATH", str(tmp_path / "old.db"))
+    db.init_db()
+    with db.connect() as con:
+        con.execute("DELETE FROM parts WHERE id LIKE 'hf%'")
+        con.execute("PRAGMA user_version=0")
+    assert not any(p["id"].startswith("hf") for p in db.list_parts("hd785"))
+    db.init_db()
+    assert any(p["id"] == "hf01" for p in db.list_parts("hd785"))
