@@ -10,7 +10,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from core import db, theme
 
-st.set_page_config(page_title="Contamination Tracker", page_icon="", layout="wide")
+st.set_page_config(page_title="Contamination Tracker", page_icon="⛏", layout="wide")
 
 
 @st.cache_resource
