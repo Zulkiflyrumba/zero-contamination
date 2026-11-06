@@ -22,6 +22,10 @@ Lokasi part pada model: klik "Set lokasi part" di Tracker untuk uji, lalu salin 
 ## Tampilan
 Banner di bagian atas memakai foto `assets/hero.jpg`. Ganti file itu dengan foto lain (`.jpg` atau `.png`) bila perlu.
 
+## Login
+
+Default: username `qc`, password `123` (tanpa signup). Ganti lewat environment variable `CT_USER` / `CT_PASS` atau `st.secrets`. Ini hanya gerbang ringan untuk demo; di versi artifact pengecekan dilakukan di browser. Untuk produksi gunakan SSO/autentikasi server. Logo ada di `assets/logo.png`.
+
 ## Jalankan lokal
 ```bash
 pip install -r requirements.txt
@@ -44,3 +48,5 @@ Database SQLite dibuat otomatis dari `data/catalog.json`. Ubah lokasinya dengan 
 - Nomor lambung dan area operasi pada data bawaan adalah data dummy. Impor data operasi nyata di halaman Katalog.
 - Posisi part di unit memakai peta zona, bukan CAD. Cek dengan parts book.
 - Embed Streamlit bersifat baca-saja untuk umpan balik. Model 3D unggahan tersimpan di browser pengguna.
+
+- Akurasi identifikasi bergantung pada foto referensi nyata. Gunakan tombol "Benar, simpan foto sebagai referensi" di versi artifact dan crop benda sebelum Lacak.
