@@ -10,7 +10,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from core import db, theme
 
-st.set_page_config(page_title="Contamination Tracker", page_icon="⛏", layout="wide")
+st.set_page_config(page_title="Contamination Tracker", page_icon="🛠️", layout="wide")
 
 
 @st.cache_resource
@@ -24,6 +24,7 @@ theme.inject()
 
 pages = [
     st.Page("views/tracker.py", title="Tracker", icon=":material/search:", default=True),
+    st.Page("views/parts3d.py", title="Galeri part 3D", icon=":material/view_in_ar:"),
     st.Page("views/catalog.py", title="Katalog", icon=":material/inventory_2:"),
     st.Page("views/cases.py", title="Inspeksi & Kasus", icon=":material/fact_check:"),
     st.Page("views/about.py", title="Tentang", icon=":material/info:"),

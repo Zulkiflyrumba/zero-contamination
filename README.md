@@ -8,6 +8,8 @@ dan simulasi lokasi part di unit berskala besar.
 ## Fitur
 - Basis data hierarkis Unit > Sistem > Assembly > Part (HD785-7, Cat 777G, PC200/400/1250/2000, D375A, GD825A, WA600) dengan spesifikasi, riwayat, dan foto referensi.
 - Kecocokan visual di browser (siluet, rasio, warna, lubang, tekstur) digabung dengan ukuran, jenis, area, dan riwayat insiden.
+- Mobile: tombol Ambil foto (kamera belakang) dan Galeri, ringkasan hasil di atas, bilah aksi tetap di bawah, dan iframe Streamlit mengikuti tinggi konten.
+- Galeri part 3D (halaman Streamlit dan tab Basis Data): model 3D interaktif per part, foto referensi, riwayat.
 - Simulasi lokasi part di unit. Model skematik bawaan, atau unggah model 3D sendiri (.glb, .gltf, .dae + tekstur, atau .zip) dan tempatkan titik part dengan klik.
 - Konfirmasi atau koreksi hasil: foto temuan menjadi referensi part (di versi artifact/web mandiri).
 - 114 komponen lapangan HD785-7 (depan, mesin kiri/kanan, sisi kiri, bawah vessel, atas deck, belakang) dari panduan OTD KPC-S 2010, lengkap dengan zona lokasi di model 3D. Database lama otomatis ikut menerima part baru ini.
