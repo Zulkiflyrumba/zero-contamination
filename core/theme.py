@@ -27,6 +27,12 @@ html,body,.stApp{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;co
 [data-testid="stSidebarNav"] a[aria-current="page"],[data-testid="stSidebarNavLink"][aria-current="page"]{background:rgba(255,255,255,.16)}
 [data-testid="stSidebarNav"] a[aria-current="page"] *,[data-testid="stSidebarNavLink"][aria-current="page"] *{color:#fff!important;font-weight:600}
 [data-testid="stSidebarCollapseButton"] button{color:#c9ddd3}
+[data-testid="stSidebar"] .stButton>button,[data-testid="stSidebar"] [data-testid^="stBaseButton"]{background:rgba(255,255,255,.18)!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)}
+[data-testid="stSidebar"] .stButton>button *,[data-testid="stSidebar"] [data-testid^="stBaseButton"] *{color:#fff!important}
+[data-testid="stSidebar"] .stButton>button:hover{background:rgba(255,255,255,.3)!important}
+[data-testid="stSidebar"] .stButton>button,[data-testid="stSidebar"] [data-testid^="stBaseButton"]{background:#fff!important;border:0!important;box-shadow:0 6px 16px rgba(0,0,0,.22)}
+[data-testid="stSidebar"] .stButton>button *,[data-testid="stSidebar"] [data-testid^="stBaseButton"] *{color:#1f4a3c!important;font-weight:700!important;opacity:1!important}
+[data-testid="stSidebar"] .stButton>button:hover{background:#e6f3ec!important}
 [data-testid="stVerticalBlockBorderWrapper"]{background:#fff;border:1px solid #dfe8e3!important;border-radius:22px!important;box-shadow:var(--ct-sh);padding:.4rem .6rem}
 h1,h2,h3{letter-spacing:-.01em;color:var(--ct-fg)}
 .stButton>button,.stDownloadButton>button,[data-testid="stBaseButton-secondary"],[data-testid="stBaseButton-primary"]{border-radius:999px;font-weight:600;border:0;background:var(--ct-soft);color:var(--ct-acc);padding:.5rem 1.2rem}

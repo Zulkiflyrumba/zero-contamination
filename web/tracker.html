@@ -232,16 +232,40 @@ header.hero .eyebrow{display:inline-block;font:600 11px var(--f-body);letter-spa
 .lg-left::before,.lg-left::after{content:"";position:absolute;background:rgba(255,255,255,.12);transform:rotate(45deg);border-radius:10px}
 .lg-left::before{width:70px;height:70px;right:-14px;top:70px}.lg-left::after{width:46px;height:46px;left:34px;bottom:46px}
 .lg-left .sh{position:absolute;left:-60px;bottom:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.09)}
-.lg-logo{position:absolute;left:26px;top:24px;width:112px;height:32px;background:var(--logo) left center/contain no-repeat}
+.lg-logo{position:relative;width:78px;height:22px;margin:0 auto 12px;flex:none;background:var(--logo) center/contain no-repeat}
 .lg-left h2{font:700 30px/1.15 var(--f-display);margin:0;position:relative}.lg-left p{margin:0;color:rgba(255,255,255,.86);font-size:13.5px;max-width:260px;position:relative}
 .lg-right{padding:44px 46px;display:flex;flex-direction:column;justify-content:center;gap:12px}
 .lg-right h1{font:700 26px var(--f-display);color:var(--accent);margin:0}.lg-right .hint{margin:0 0 8px}
 .lg-right input{width:100%;min-height:50px;font-size:15px;padding:12px 16px}
 #lgErr{min-height:18px;color:var(--bad);font:500 12.5px var(--f-body)}
 .lg-right .btn.pri{width:100%;min-height:50px;letter-spacing:.1em;text-transform:uppercase;font-size:13px;margin-top:4px}
-@media (max-width:760px){.lg-card{grid-template-columns:1fr;min-height:0}.lg-left{padding:70px 24px 28px;gap:6px}.lg-left h2{font-size:24px}.lg-right{padding:26px 24px 30px}}
+@media (max-width:760px){.lg-card{grid-template-columns:1fr;min-height:0}.lg-left{padding:34px 24px 30px;gap:6px}.lg-left h2{font-size:24px}.lg-right{padding:26px 24px 30px}}
 body.locked>*:not(#login):not(script){visibility:hidden}
 nav.rail .lo{margin-top:auto}
+</style>
+
+<style>
+#login .lg-card{background:#fff}
+#login .lg-right{background:#fff;color:#1d2b25}
+#login .lg-right h1{color:#2f9a73}
+#login .lg-right input{background:#eef4f0!important;color:#1d2b25!important;-webkit-text-fill-color:#1d2b25;caret-color:#1d2b25;border:1px solid #d5e2da}
+#login .lg-right input::placeholder{color:#7b8c83;opacity:1;-webkit-text-fill-color:#7b8c83}
+#login .lg-right input:-webkit-autofill{-webkit-text-fill-color:#1d2b25;box-shadow:0 0 0 40px #eef4f0 inset}
+#login .lg-right .hint{color:#5d6f66}
+#login .lg-right .btn.pri{background:#2f9a73;color:#fff}
+nav.rail .lo{color:#fff;background:rgba(255,255,255,.16)}
+nav.rail .lo:hover{background:rgba(255,255,255,.28)}
+nav.rail .lo svg{stroke:#fff}
+</style>
+
+<style>
+#login .lg-right input{background:#fff!important;color:#3d4a44!important;-webkit-text-fill-color:#3d4a44!important;caret-color:#3d4a44;border:1px solid #cfd8d3}
+#login .lg-right input::placeholder{color:#8a9690;-webkit-text-fill-color:#8a9690}
+#login .lg-right input:-webkit-autofill{-webkit-text-fill-color:#3d4a44;box-shadow:0 0 0 40px #fff inset}
+nav.rail .lo{background:#fff!important;color:#1f4a3c!important;box-shadow:0 6px 16px rgba(0,0,0,.22)}
+nav.rail .lo:hover{background:#e6f3ec!important}
+nav.rail .lo svg{stroke:#1f4a3c!important}
+nav.rail .lo span,nav.rail .lo b,nav.rail .lo .lbl{color:#1f4a3c!important;font-weight:700}
 </style>
 <style>body.embed nav.rail,body.embed #v-kasus,body.embed .note{display:none!important}body.embed:not(.embed-db) #v-database{display:none!important}body.embed-db #v-analisis,body.embed-db #unitSec,body.embed-db header.hero{display:none!important}body.embed{padding:0 0 8px!important;background:transparent!important}</style>
 <div class="wrap">
