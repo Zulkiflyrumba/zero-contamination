@@ -1,7 +1,7 @@
 """Catalog page: units, specs, parts (unit > system > assembly > part), photos, daily operations."""
 import json
 import sys
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -155,6 +155,6 @@ with tab_ops:
 
 with tab_export:
     allp = pd.DataFrame(db.list_parts())
-    st.download_button("Unduh semua part (CSV)", allp.to_csv(index=False).encode("utf-8"), f"parts-{date.today()}.csv", "text/csv")
+    st.download_button("Unduh semua part (CSV)", allp.to_csv(index=False).encode("utf-8"), f"parts-{datetime.now().astimezone().date()}.csv", "text/csv")
     st.download_button("Unduh payload JSON (untuk front end)", json.dumps(db.export_payload(), ensure_ascii=False).encode("utf-8"),
-                       f"payload-{date.today()}.json", "application/json")
+                       f"payload-{datetime.now().astimezone().date()}.json", "application/json")

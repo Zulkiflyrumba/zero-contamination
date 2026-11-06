@@ -6,6 +6,11 @@ import streamlit as st
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 
+
+def _logo_uri() -> str:
+    f = ASSETS / "logo.png"
+    return "data:image/png;base64," + base64.b64encode(f.read_bytes()).decode() if f.exists() else ""
+
 CSS = """
 <style>
 :root{--ct-bg:#e7eee9;--ct-bg2:#f2f6f3;--ct-rail:#233f35;--ct-acc:#2f9a73;--ct-soft:#dff1e8;--ct-fg:#2a3a35;--ct-mut:#7d8e87;--ct-sh:0 10px 30px rgba(52,86,70,.10)}
@@ -37,6 +42,7 @@ h1,h2,h3{letter-spacing:-.01em;color:var(--ct-fg)}
 iframe{border:0;border-radius:28px}
 .ct-hero{position:relative;overflow:hidden;border-radius:28px;box-shadow:var(--ct-sh);padding:30px 32px;min-height:170px;margin-bottom:1.2rem;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;
  background:linear-gradient(100deg,rgba(18,46,36,.94) 0%,rgba(24,60,47,.62) 40%,rgba(24,60,47,.04) 100%),var(--hero) center 45%/cover no-repeat}
+.ct-hero .lg{position:absolute;right:30px;top:24px;width:118px;height:34px;background:var(--logo) right center/contain no-repeat}
 .ct-hero .eb{align-self:flex-start;font:600 11px 'Plus Jakarta Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:4px 11px;border-radius:99px;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);margin-bottom:10px;color:#fff}
 .ct-hero h1{margin:0;color:#fff!important;font-size:28px;font-weight:700;padding:0}
 .ct-hero p{margin:4px 0 0;color:rgba(255,255,255,.85);font-size:13px;max-width:520px}
@@ -62,7 +68,7 @@ def inject() -> None:
 
 def hero(title: str, subtitle: str, eyebrow: str = "PIT · ROM · Foreign material") -> None:
     st.markdown(
-        f'<div class="ct-hero" style="--hero:url({_hero_uri()})"><span class="eb">{eyebrow}</span>'
+        f'<div class="ct-hero" style="--hero:url({_hero_uri()});--logo:url({_logo_uri()})"><div class="lg"></div><span class="eb">{eyebrow}</span>'
         f"<h1>{title}</h1><p>{subtitle}</p></div>",
         unsafe_allow_html=True,
     )

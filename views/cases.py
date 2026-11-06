@@ -1,6 +1,6 @@
 """Inspection records per fleet number (nomor lambung) and the contamination case log."""
 import sys
-from datetime import date
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -32,7 +32,7 @@ with t_ins:
         for r in ed.to_dict("records"):
             old = cur.get(r["lambung"], {})
             if r["status"] != old.get("status", "belum") or (r["catatan"] or "") != (old.get("note") or ""):
-                db.set_inspection(r["lambung"], pid, r["status"], str(date.today()), r["catatan"] or "")
+                db.set_inspection(r["lambung"], pid, r["status"], str(datetime.now().astimezone().date()), r["catatan"] or "")
                 n += 1
         st.success(f"{n} perubahan disimpan.")
 
@@ -46,7 +46,7 @@ with t_case:
     with st.form("new_case", clear_on_submit=True):
         st.subheader("Catat kasus baru")
         c1, c2 = st.columns(2)
-        d = c1.date_input("Tanggal temuan", date.today())
+        d = c1.date_input("Tanggal temuan", datetime.now().astimezone().date())
         loc = c2.selectbox("Lokasi", list(META["area_units"].keys()))
         uid2 = c1.selectbox("Unit sumber", [u["id"] for u in units], format_func=lambda i: by_id[i]["name"])
         plist = [p for p in parts.values() if p["unit_id"] == uid2]
