@@ -267,9 +267,31 @@ nav.rail .lo:hover{background:#e6f3ec!important}
 nav.rail .lo svg{stroke:#1f4a3c!important}
 nav.rail .lo span,nav.rail .lo b,nav.rail .lo .lbl{color:#1f4a3c!important;font-weight:700}
 </style>
+
+<style>
+/* login: logo proporsional, teks lebih kecil */
+#login .lg-logo{display:block;width:auto;height:20px;max-width:none;margin:0 auto 14px;background:none;aspect-ratio:auto;object-fit:contain}
+#login .lg-left h2{font-size:22px}#login .lg-left p{font-size:12px;max-width:240px}
+#login .lg-right{padding:40px 44px;gap:10px}
+#login .lg-right h1{font-size:20px}
+#login .lg-right .hint{font-size:12px;margin:0 0 6px}
+#login .lg-right input{font-size:14px;min-height:44px;padding:10px 14px}
+#login .lg-right .btn.pri{min-height:44px;font-size:12px}
+#login #lgErr{font-size:12px}
+@media (max-width:760px){#login .lg-left h2{font-size:19px}#login .lg-right{padding:22px 22px 26px}}
+.lg-card{position:relative}
+.langbtn{position:absolute;z-index:6;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px 0 9px;border-radius:999px;cursor:pointer;font:700 11px/1 var(--f-ui,inherit);letter-spacing:.06em;background:rgba(255,255,255,.22);color:#fff;border:1px solid rgba(255,255,255,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);text-transform:none}
+.langbtn svg{width:15px;height:15px;stroke:currentColor}
+.langbtn:hover{background:rgba(255,255,255,.36)}
+header.hero>.langbtn{right:30px;top:66px}
+#login .lg-card>.langbtn{right:16px;top:16px;background:#fff;color:#2f6f57;border-color:#cfd8d3;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+#login .lg-card>.langbtn:hover{background:#eef4f0}
+@media (max-width:600px){header.hero>.langbtn{right:18px;top:52px}}
+@media (max-width:760px){#login .lg-card>.langbtn{background:rgba(255,255,255,.22);color:#fff;border-color:rgba(255,255,255,.5)}}
+</style>
 <style>body.embed nav.rail,body.embed #v-kasus,body.embed .note{display:none!important}body.embed:not(.embed-db) #v-database{display:none!important}body.embed-db #v-analisis,body.embed-db #unitSec,body.embed-db header.hero{display:none!important}body.embed{padding:0 0 8px!important;background:transparent!important}</style>
 <div class="wrap">
-<div id="login" hidden><div class="lg-card"><div class="lg-left"><div class="lg-logo" role="img" aria-label="Adaro"></div><span class="sh"></span><h2>Selamat datang</h2><p>Contamination Tracker. Telusuri sumber kontaminan di PIT dan ROM dari foto temuan.</p></div>
+<div id="login" hidden><div class="lg-card"><div class="lg-left"><img class="lg-logo" alt="Adaro"><span class="sh"></span><h2>Selamat datang</h2><p>Contamination Tracker. Telusuri sumber kontaminan di PIT dan ROM dari foto temuan.</p></div>
 <form class="lg-right" id="lgForm" autocomplete="on"><h1>Masuk</h1><p class="hint">Gunakan akun tim QC.</p><input id="lgU" name="username" placeholder="Username" autocomplete="username" autocapitalize="off" required><input id="lgP" name="password" type="password" placeholder="Password" autocomplete="current-password" required><div id="lgErr" role="alert"></div><button class="btn pri" type="submit">Login</button></form></div></div>
 <header class="hero"><div class="hlogo" role="img" aria-label="Adaro"></div>
   <div class="brand"><div><span class="eyebrow">PIT · ROM · Foreign material</span><h1>Contamination Tracker</h1><div class="sub">Telusuri sumber kontaminan di PIT dan ROM dari foto temuan</div></div></div>
@@ -1125,5 +1147,159 @@ const show=()=>{lg.hidden=false;document.body.classList.add('locked');setTimeout
 if(!ok)show();
 $('lgForm').onsubmit=e=>{e.preventDefault();if($('lgU').value.trim().toLowerCase()==='qc'&&$('lgP').value==='123'){try{sessionStorage.setItem('ct-auth','1')}catch(_){}lg.hidden=true;document.body.classList.remove('locked');$('lgP').value='';$('lgErr').textContent='';dispatchEvent(new Event('resize'))}else{$('lgErr').textContent='Username atau password salah.'}};
 const rail=document.querySelector('nav.rail');if(rail){const b=document.createElement('button');b.className='lo';b.type='button';b.title='Keluar';b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 8l4 4-4 4M20 12H9"/></svg><span class="lbl">Keluar</span>';b.onclick=()=>{try{sessionStorage.removeItem('ct-auth')}catch(_){}show()};rail.appendChild(b)}
+})();
+/* Bahasa: satu tombol ID <-> EN. Menerjemahkan seluruh teks tampilan (termasuk yang dibuat dinamis) tanpa mengubah kode lain. */
+(function(){
+const D={
+'telusuri sumber kontaminan di pit dan rom dari foto temuan':'Trace the source of contamination in the pit and ROM from a photo of the finding',
+'contamination tracker. telusuri sumber kontaminan di pit dan rom dari foto temuan.':'Contamination Tracker. Trace the source of contamination in the pit and ROM from a photo of the finding.',
+'analisis':'Analysis','basis data':'Database','kasus':'Cases','keluar':'Log out','tampilan':'View',
+'selamat datang':'Welcome','masuk':'Sign in','gunakan akun tim qc.':'Use your QC team account.','login':'Login',
+'username atau password salah.':'Wrong username or password.',
+'unit':'units','part':'parts','input temuan':'Finding input','lokasi':'Location','jenis':'Type','logam':'Metal','non-logam':'Non-metal','belum tahu':'Not sure',
+'ukuran (mm)':'Size (mm)','tanggal':'Date','ambil foto':'Take photo','galeri':'Gallery',
+'lacak otomatis setelah ambil foto':'Auto-trace after taking a photo','tandai benda setelah foto (disarankan)':'Mark the object after the photo (recommended)',
+'tarik foto ke sini atau tekan untuk memilih.':'Drag a photo here or tap to choose.','1 sudut cukup. tambah sudut lain untuk hasil lebih tajam.':'1 angle is enough. Add more angles for a sharper result.',
+'belum ada foto. coba contoh temuan di bawah.':'No photo yet. Try a sample finding below.','lacak sumber':'Trace source',
+'contoh temuan (foto dummy, dibuat otomatis):':'Sample findings (dummy photos, auto-generated):','kasus nyata':'Real case',
+'serpihan ban otr':'OTR tire fragment','gigi bucket':'Bucket tooth','baut':'Bolt','hose hidrolik':'Hydraulic hose','rod silinder':'Cylinder rod',
+'rekonstruksi 3d':'3D reconstruction','menunggu input':'waiting for input','mode: idle':'MODE: IDLE','belum ada objek':'No object yet',
+'pilih contoh temuan atau unggah foto,':'Choose a sample finding or upload a photo,','lalu tekan lacak sumber.':'then press Trace source.',
+'scan':'Scan','rekonstruksi':'Reconstruction','realistis':'Realistic','overlay referensi':'Reference overlay','putar':'Rotate',
+'peringkat kemiripan':'Similarity ranking','belum ada hasil':'No result yet','peringkat part dan unit muncul di sini.':'The ranking of parts and units appears here.',
+'telusuri nomor lambung':'Trace fleet number','kandidat nomor lambung muncul setelah analisis.':'Fleet number candidates appear after analysis.',
+'simulasi lokasi di unit':'Location simulation on the unit','mode: orbit bebas':'MODE: FREE ORBIT','simulasikan ke unit':'Simulate on unit','tembus pandang':'X-ray',
+'tambah':'Add','tambah part':'Add part','cari part':'Search parts','hanya kandidat kontaminan':'contaminant candidates only','buka semua':'Expand all','tutup semua':'Collapse all',
+'riwayat kasus kontaminasi':'Contamination case history','form':'Form','tutup':'Close',
+'prototipe. foto referensi dan temuan di sini dibuat otomatis dari model 3d sederhana, kecuali foto kasus nyata hd785 #512. kemiripan dihitung dari warna, bentuk siluet, rasio ukuran, dan konteks lokasi, jadi hasilnya berupa kandidat berperingkat untuk dikonfirmasi tim qc, bukan kepastian. data tersimpan di browser ini, dan di basis data bersama bila tersedia.':'Prototype. Reference and finding photos here are auto-generated from simple 3D models, except the real HD785 #512 case photo. Similarity is computed from color, silhouette, size ratio and location context, so the result is a ranked list of candidates for the QC team to confirm, not a certainty. Data is stored in this browser, and in the shared database when available.',
+'pilih contoh atau ambil foto':'Choose a sample or take a photo','tandai benda temuan':'Mark the finding',
+'geser kotak dan tarik sudutnya sampai pas di sekeliling benda. latar yang sedikit membuat hasil lebih akurat.':'Move the box and drag its corners until it fits around the object. A plain background gives a more accurate result.',
+'lewati':'Skip','pakai potongan':'Use crop','foto temuan':'Finding photo','foto sudut':'Angle photo','ketuk untuk memotong ulang':'Tap to re-crop','hapus':'Delete',
+'2 sudut. tambah sudut lain untuk memperkuat hasil.':'2 angles. Add another angle to strengthen the result.',
+'menganalisis…':'Analyzing…','menyiapkan basis referensi':'Preparing reference database','memproses foto':'Processing photo','ekstraksi siluet, warna, tekstur…':'Extracting silhouette, color, texture…',
+'keyakinan rendah':'Low confidence','keyakinan sedang':'Medium confidence','keyakinan tinggi':'High confidence',
+'kemiripan visual':'Visual similarity','peluang jenis part':'Part-type probability','kejadian 12 bln':'Events 12 mo','kejadian 12 bulan':'Events, 12 months',
+'lokasi di unit':'Location on unit','model 3d':'3D model','peringkat':'Ranking','mode: render realistis':'MODE: REALISTIC RENDER','mode: scan point cloud':'MODE: SCAN POINT CLOUD','mode: rekonstruksi mesh':'MODE: MESH RECONSTRUCTION','mode: overlay referensi':'MODE: REFERENCE OVERLAY',
+'lihat lokasi di unit ↓':'See location on unit ↓',
+'hasil ini ambigu: peluang jenis part hanya':'This result is ambiguous: the part-type probability is only',
+'apakah hasil ini benar?':'Is this result correct?','benar, simpan foto sebagai referensi':'Correct, save photo as reference','bukan, pilih part lain…':'No, choose another part…',
+'foto contoh bawaan tidak dipakai sebagai referensi':'Built-in sample photos are not used as references',
+'sumber paling mungkin':'Most likely source','dump truck':'Dump truck','excavator':'Excavator','dozer':'Dozer','grader':'Grader','wheel loader':'Wheel loader','jenis part':'Part type',
+'kecocokan ukuran':'Size match','ukuran belum diisi':'Size not entered','unit aktif di area':'Units active in area','penggantian terakhir':'Last replacement','penggantian terjadwal':'Scheduled replacement',
+'tindak lanjut':'Follow-up','kualitas input':'Input quality','baru 2 sudut':'Only 2 angles so far','baru 1 sudut':'Only 1 angle so far',
+'tambah foto dari sisi lain, dengan penggaris sebagai pembanding.':'Add photos from other sides, with a ruler for scale.',
+'periksa part serupa pada unit di area temuan. pasang magnet atau metal detector di titik crusher/rom, dan cek get unit terkait.':'Check similar parts on units in the finding area. Install a magnet or metal detector at the crusher/ROM point, and check the GET of related units.',
+'tidak tercatat di area ini':'Not recorded in this area','belum ada riwayat':'No history yet',
+'no.':'No.','area':'Area','inspeksi':'Inspection','di area':'in area','lain/libur':'other/off','belum diperiksa':'Not inspected','lengkap':'Complete','hilang':'Missing','rusak':'Damaged','tetapkan':'Set',
+'data operasi dan inspeksi masih dummy. ganti dengan data dispatch dan checklist inspeksi unit.':'Operation and inspection data are still dummy. Replace with dispatch data and unit inspection checklists.',
+'untuk part':'for part','skala perkiraan':'approximate scale','panjang':'LENGTH','lebar':'WIDTH','tinggi':'HEIGHT',
+'zona':'Zone','tinggi dari tanah':'Height from ground','samping':'Side','depan / belakang':'Front / rear',
+'titik amber adalah lokasi part hipotesis ini. titik cyan adalah kandidat lain di unit yang sama. figur manusia setinggi 1,75 m menjadi pembanding skala.':'The amber dot is the location of this hypothesized part. Cyan dots are other candidates on the same unit. A 1.75 m human figure serves as a scale reference.',
+'model unit dan posisi part berasal dari peta zona skematik, bukan gambar cad. ukur ulang dengan parts book sebelum dipakai untuk inspeksi.':'The unit model and part positions come from a schematic zone map, not CAD drawings. Re-measure against the parts book before using for inspection.',
+'model 3d milik anda untuk':'Your own 3D model for','model 3d milik anda dipakai.':'Your own 3D model is in use.',
+'posisi part dipetakan dari zona skematik ke ukuran model anda, jadi gunakan set lokasi part untuk menempatkannya tepat.':'Part positions are mapped from the schematic zones onto your model size, so use Set part location to place them exactly.',
+'pilih file .glb, .gltf, atau .dae beserta teksturnya, atau satu file .zip. file rar harus diekstrak dulu. model disimpan di browser ini.':'Choose .glb, .gltf or .dae files with their textures, or a single .zip file. RAR files must be extracted first. The model is stored in this browser.',
+'panjang unit (m)':'Unit length (m)','sumbu atas model':'Model up axis','y (umum)':'Y (common)','z (collada/blender)':'Z (Collada/Blender)','putar arah depan':'Rotate front direction',
+'terapkan model':'Apply model','kembali ke skematik':'Back to schematic','belum ada model. unit memakai model skematik.':'No model yet. The unit uses the schematic model.',
+'depan (contoh)':'Front (sample)','belakang (contoh)':'Rear (sample)','klik model untuk menaruh titik…':'Click the model to place a point…','set lokasi part':'Set part location',
+'klik titik di model untuk uji posisi. agar permanen, salin koordinat ke katalog › model 3d › lokasi part.':'Click a point on the model to test the position. To make it permanent, copy the coordinates to Catalog › 3D model › Part location.',
+'part lain di assembly yang sama':'Other parts in the same assembly','di sumbu tengah':'on the centerline','ke kiri':'to the left','ke kanan':'to the right','ke depan':'forward','ke belakang':'rearward',
+'rata-rata hm':'Average HM','keterangan':'Notes','model unit':'Unit model','jumlah unit':'Number of units','tambah unit':'Add unit','simpan unit':'Save unit',
+'nama part':'Part name','nomor part':'Part number','sistem':'System','assembly':'Assembly','bentuk 3d':'3D shape','material':'Material','panjang (mm)':'Length (mm)','lebar (mm)':'Width (mm)','tinggi (mm)':'Height (mm)',
+'keterangan kerusakan umum':'Common damage notes','tambah foto referensi':'Add reference photo','simpan part':'Save part','tambah riwayat':'Add history','alasan':'Reason','alasan penggantian':'Replacement reason',
+'model 3d · seret untuk memutar':'3D MODEL · drag to rotate','kasus asli':'real case','lembar spesifikasi':'spec sheet','spesifikasi unit belum diisi.':'Unit specifications not filled in yet.',
+'no. part':'Part no.','dimensi (mm)':'Dimensions (mm)','jml':'Qty','kontaminan':'Contaminant','kandidat':'candidate','detail':'Detail','tidak':'no','ya':'Yes',
+'tidak ada part':'No parts','ubah kata kunci atau tekan tambah part.':'Change the keyword or press Add part.',
+'jobsite (hasil investigasi qc)':'Jobsite (QC investigation result)',
+'pecahan clamp melengkung dengan blok dua lubang ditemukan sebagai kontaminan logam. penelusuran qc: berasal dari hose clamp penahan hose di bawah dump body hd785 nomor lambung 512.':'A curved clamp fragment with a two-hole block was found as a metal contaminant. QC trace: it came from the hose clamp holding the hose under the dump body of HD785 fleet number 512.',
+'sumber: ritchiespecs.com (hd785-7). nilai dari oem berlaku untuk unit dasar dan bisa berbeda menurut opsi. verifikasi dengan parts book sebelum dipakai untuk keputusan.':'Source: ritchiespecs.com (HD785-7). OEM values apply to the base unit and may differ by option. Verify against the parts book before using for decisions.',
+'mesin':'Engine','kapasitas bak':'Body capacity','ban':'Tires','berat kosong':'Empty weight','berat kotor (gvw)':'Gross weight (GVW)','kecepatan maks':'Max speed','transmisi':'Transmission','rem':'Brake','hoist':'Hoist',
+'planetary otomatis 7 maju, 2 mundur, torque converter':'Automatic planetary, 7 forward, 2 reverse, torque converter',
+'hidrolik multiple-disc terendam oli, depan dan belakang; parkir pegas':'Oil-immersed multiple-disc hydraulic, front and rear; spring parking brake',
+'dua silinder, 2 tahap telescopic':'Two cylinders, 2-stage telescopic','kapasitas bucket':'Bucket capacity','lebar track shoe':'Track shoe width','kecepatan swing':'Swing speed','aliran pompa utama maks':'Max main pump flow','aliran pompa':'Pump flow','berat operasi':'Operating weight','target berat kotor':'Target gross weight','kapasitas bak dual slope':'Dual-slope body capacity','waktu hoist':'Hoist time','perlu verifikasi':'needs verification',
+'naik 15 detik, turun 13 detik':'Up 15 s, down 13 s',
+'pecah dari braket, serpihan pipih melengkung dengan blok dua lubang':'Broke off the bracket; a flat curved fragment with a two-hole block',
+'hose hoist, di bawah bak sisi kiri':'Hoist hose, under the body on the left side',
+'tidak ada hasil':'No results','bak: lantai dan dinding':'Dump body: floor and walls','engsel bak di belakang':'Body hinge at the rear','canopy di atas kabin':'Canopy above the cab','silinder hoist di bawah bak':'Hoist cylinder under the body','strut suspensi depan':'Front suspension strut','suspensi belakang':'Rear suspension','sistem kemudi depan':'Front steering system','ban belakang':'Rear tires','roda dan rim depan':'Front wheels and rims','rem roda belakang':'Rear wheel brake','poros penggerak':'Drive shaft','radiator dan fan di depan':'Radiator and fan at the front','ruang mesin depan':'Front engine compartment','knalpot dan turbo':'Exhaust and turbo','tangga dan akses kabin':'Ladder and cab access','kaca dan lampu kabin':'Cab glass and lamps','harness kabel sepanjang rangka':'Cable harness along the frame','bucket di ujung attachment':'Bucket at the attachment tip','boom dan arm':'Boom and arm','ripper di belakang':'Ripper at the rear','blade di depan':'Blade at the front','track sisi kiri':'Left-side track','roller dan sprocket':'Rollers and sprocket','swing bearing':'Swing bearing','counterweight di belakang':'Counterweight at the rear','hose hidrolik di sepanjang boom':'Hydraulic hose along the boom','ruang mesin dan radiator':'Engine compartment and radiator','kabin operator':'Operator cab','rangka utama':'Main frame','bodi utama':'Main body','bodi unit':'Unit body','grille depan: oil cooler, aftercooler, ac condenser':'Front grille: oil cooler, aftercooler, AC condenser','lampu di bumper depan':'Lamps on the front bumper','panel emergency stop dan fire suppression, depan kiri':'Emergency stop and fire suppression panel, front left','sisi kiri mesin':'Left side of the engine','sistem bahan bakar di sisi kiri mesin':'Fuel system on the left side of the engine','tangki solar sisi kanan':'Diesel tank, right side','sisi kanan mesin':'Right side of the engine','tangki hidrolik steering-hoist, sisi kiri':'Steering-hoist hydraulic tank, left side','pompa steering-hoist, bawah vessel':'Steering-hoist pump, under the vessel','transmisi, sisi kiri tengah':'Transmission, left center','torqueconverter dan pto, bawah vessel':'Torque converter and PTO, under the vessel','filter dan pompa brake cooling':'Brake cooling filter and pump','accumulator rem depan dan belakang, sisi kiri':'Front and rear brake accumulators, left side','tangki oli rem dan manifold, sisi kanan':'Brake oil tank and manifold, right side','valve kontrol rem dan epc, bawah vessel':'Brake control valve and EPC, under the vessel','rem depan':'Front brake','rem belakang':'Rear brake','final drive roda belakang':'Rear wheel final drive','differential belakang':'Rear differential','divider grease dan suspensi belakang':'Grease divider and rear suspension','lampu dan sensor di belakang':'Lamps and sensors at the rear','pin pengunci bak di belakang':'Body lock pin at the rear','air cleaner di atas deck':'Air cleaner on the deck','tangga, pegangan, dan spion kabin':'Ladder, handrail and cab mirror','kotak baterai di atas deck':'Battery box on the deck','model dimuat':'Model loaded','lokasi part disimpan':'Part location saved','part dihapus':'Part deleted','riwayat ditambahkan':'History added','foto referensi ditambahkan':'Reference photo added','isi nama part':'Enter the part name','isi model unit':'Enter the unit model','unit ditambahkan':'Unit added','analisis gagal':'Analysis failed','penyimpanan browser penuh. hapus foto lama.':'Browser storage is full. Delete old photos.','periksa kondisi ban atau hose unit terkait dan pisahkan material non-logam dari rom sebelum crusher.':'Check the tires or hoses of the related unit and separate non-metal material from the ROM before the crusher.','mis. 180':'e.g. 180','nama, nomor part, sistem, material':'name, part number, system, material','mis. hd1500-8':'e.g. HD1500-8','mis. bucket tooth':'e.g. Bucket tooth','mis. 208-70-14152':'e.g. 208-70-14152','pola aus atau patah yang biasa terjadi':'Usual wear or breakage pattern','mis. 34200':'e.g. 34200','aus normal, patah, lepas…':'Normal wear, broken, loose…','unggah foto temuan':'Upload finding photo','kasus nyata · hd785 #512':'Real case · HD785 #512','body & bak':'Body & Dump Body','roda & ban':'Wheels & Tires','mesin & pendingin':'Engine & Cooling','kabin & struktur':'Cabin & Structure','oli transmisi':'Transmission Oil','tangki solar':'Diesel Tank','rem hidrolik':'Hydraulic Brake','panel rem kanan':'Right Brake Panel','valve rem & epc':'Brake Valve & EPC','accumulator kiri':'Left Accumulator','mesin kiri':'Left Engine','mesin kanan':'Right Engine','lampu depan':'Front Lamps','lampu belakang':'Rear Lamps','panel darurat':'Emergency Panel','pin lock bak':'Body Lock Pin','tangki steering-hoist':'Steering-Hoist Tank','pompa steering-hoist':'Steering-Hoist Pump','kaca & lampu':'Glass & Lamps','cooler depan':'Front Cooler','grease & suspensi belakang':'Grease & Rear Suspension','suspensi belakang':'Rear Suspension','suspensi depan':'Front Suspension','penggerak':'Drivetrain','keselamatan':'Safety','kelistrikan':'Electrical','bahan bakar':'Fuel','baterai':'Battery','akses':'Access','sabuk':'Belt','ban':'Tires','suspensi':'Suspension','simpan':'Save','batal':'Cancel','pilih':'Choose','ganti':'Replace','unggah':'Upload',
+};
+const W={'mis.':'e.g.','baja':'steel','karet':'rubber','kawat':'wire','kaca':'glass','plastik':'plastic','tembaga':'copper','timbal':'lead','kuningan':'brass','besi cor':'cast iron','baja cor':'cast steel','baja tuang':'cast steel','baja tempa':'forged steel','baja paduan':'alloy steel','baja kelas':'grade steel','baja pegas':'spring steel','baja pelat':'steel plate','baja struktur':'structural steel','baja nirkarat':'stainless steel','baja galvanis':'galvanized steel','baja cat':'painted steel','baja boron':'boron steel','baja chrome':'chrome steel','baja karburasi':'case-hardened steel','baja tuang mn':'cast Mn steel',
+'pipa':'pipe','pelat':'plate','sabuk':'belt','tangga':'ladder','pecahan':'fragment','serpihan':'fragment','pecah':'cracked','patah':'broken','aus':'worn','retak':'cracked','terlepas':'detached','lepas':'loose','sobekan':'tear','sobek':'torn','goresan':'scratches','karat':'rust','getaran':'vibration','benturan':'impact','akibat':'due to','dari':'from','dan':'and','atau':'or','dengan':'with','pada':'on','di':'at','yang':'that','di bawah':'under','sisi kiri':'left side','sisi kanan':'right side','belakang':'rear','depan':'front','kiri':'left','kanan':'right','bawah':'under','atas':'top','sepanjang':'along','lubang':'hole','baut':'bolt','ulir':'thread','kepala':'head','leher':'neck','ujung':'tip','pangkal':'base','sudut las':'weld corner','las':'weld','tepi':'edge','tumpul':'blunt','hilang':'missing','keluar':'protruding','terlihat':'visible','sarung luar':'outer sheath','kawat terlihat':'wire exposed','memanjang':'lengthwise','alur':'groove','diameter':'diameter','impact batu':'rock impact','batu':'rock','tajam':'sharp','keras':'hardened','tipis':'thin','menjadi':'into','bekas':'trace of','kabin':'cabin','mesin':'engine','pendingin':'cooling','roda':'wheel','suspensi':'suspension','rem':'brake','penggerak':'drivetrain','kelistrikan':'electrical','keselamatan':'safety','bahan bakar':'fuel','lampu':'lamp','tangki':'tank','pompa':'pump','oli':'oil','solar':'diesel','bak':'body','lantai':'floor','dinding':'wall','engsel':'hinge','silinder':'cylinder','kemudi':'steering','pengunci':'lock','baterai':'battery','kotak':'box','panel darurat':'emergency panel','akses':'access','komposit':'composite','nilon':'nylon','polikarbonat':'polycarbonate','tempered':'tempered','nitril':'nitrile','hidrolik':'hydraulic','nomor':'number','berasal':'originates','ditemukan':'found','kontaminan':'contaminant','kandidat':'candidate','hipotesis':'hypothesis','foto':'photo','sudut':'angle','temuan':'finding','ukuran':'size','lokasi':'location','unit':'unit','jam':'h','menit':'min','detik':'s','ton':'ton','tahap':'stage','maju':'forward','mundur':'reverse','bebas':'free','tinggi':'height','lebar':'width','panjang':'length','tanah':'ground','beroperasi':'operating','ruang':'compartment','rangka':'frame','bodi':'body','utama':'main','spion':'mirror','pegangan':'handrail','kaca tempered':'tempered glass'};
+const lc=s=>s.toLowerCase();
+const wk=Object.keys(W).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+const WR=new RegExp('(?<![A-Za-z0-9])('+wk.join('|')+')(?![A-Za-z0-9])','gi');
+const cap=(src,out)=>src[0]===src[0].toUpperCase()&&src[0]!==src[0].toLowerCase()?out[0].toUpperCase()+out.slice(1):out;
+const R=[
+[/^Model 3D milik Anda untuk (.+)$/i,'Your own 3D model for $1'],[/^Memuat model 3D (.+) dari repo…$/i,'Loading 3D model $1 from the repo…'],[/^Model repo gagal dimuat: (.+)$/i,'Repo model failed to load: $1'],
+[/^(\d+) foto\. Ambil sudut lain atau tekan Lacak sumber\.$/i,'$1 photo(s). Take another angle or press Trace source.'],[/^(\d+) foto ditambahkan sebagai referensi.*$/i,'$1 photo(s) added as references'],
+[/^Part ditambahkan ke (.+)$/i,'Part added to $1'],[/^Inspeksi (\d+) dicatat$/i,'Inspection $1 recorded'],[/^Kasus dicatat: (.+)$/i,'Case recorded: $1'],
+[/^([\d,.]+) m ke (kiri|kanan|depan|belakang)$/i,(m,n,d)=>n+' m '+({kiri:'to the left',kanan:'to the right',depan:'forward',belakang:'rearward'})[d.toLowerCase()]],
+[/^Keyakinan (Rendah|Sedang|Tinggi)$/i,(m,x)=>({rendah:'Low',sedang:'Medium',tinggi:'High'})[x.toLowerCase()]+' confidence'],
+
+[/^Part (\d+) dari (\d+)$/i,'Part $1 of $2'],[/^Hipotesis #(\d+) dari (\d+)$/i,'Hypothesis #$1 of $2'],[/^Hipotesis #(\d+)$/i,'Hypothesis #$1'],
+[/^(\d+) sudut\. Tambah sudut lain untuk memperkuat hasil\.$/i,'$1 angles. Add another angle to strengthen the result.'],
+[/^Foto temuan (\d+)$/i,'Finding photo $1'],[/^Foto sudut (\d+)$/i,'Angle photo $1'],[/^Lacak sumber · (\d+) foto$/i,'Trace source · $1 photos'],
+[/^(\d+)% peluang bahwa temuan ini jenis tersebut, (\d+) part serupa di unit berbeda$/i,'$1% chance this finding is of that type, $2 similar part(s) in other units'],
+[/^Hasil ini ambigu: peluang jenis part hanya (\d+)% dan banyak part serupa di unit berbeda\. Tambah foto dari sudut lain, isi ukuran, atau cek apakah part ini sudah ada di basis data\. Jika belum, tambahkan di Basis Data lalu foto temuan ini dipakai sebagai referensinya\.$/i,'This result is ambiguous: the part-type probability is only $1% and there are many similar parts in different units. Add photos from other angles, enter the size, or check whether this part is already in the database. If not, add it under Database and use this finding photo as its reference.'],
+[/^Kandidat (.+) untuk part$/i,'Candidate $1 for part'],
+[/^\. Urutan: hilang atau rusak lebih dulu, lalu yang beroperasi di (.+) pada (.+)\.$/i,'. Order: missing or damaged first, then those operating at $1 on $2.'],
+[/^(\d+) part$/i,'$1 parts'],[/^(\d+) unit$/i,'$1 units'],[/^(\d+) kasus$/i,'$1 case(s)'],[/^(\d+) assembly$/i,'$1 assemblies'],[/^(\d+) dari (\d+) part$/i,'$1 of $2 parts'],
+[/^rata-rata ([\d.]+) HM$/i,'average $1 HM'],[/^Part lain di assembly yang sama \((\d+)\):$/i,'Other parts in the same assembly ($1):'],
+[/^Status inspeksi (\d+)$/i,'Inspection status $1'],[/^Ya, beroperasi di (.+)$/i,'Yes, operating at $1'],[/^Ukuran (\d+)×(\d+)×(\d+) mm$/i,'Size $1×$2×$3 mm'],
+[/^(\d+)% total semua part unit ini$/i,'$1% of all parts on this unit'],[/^(.+) · (\d+)% total semua part unit ini$/i,'$1 · $2% of all parts on this unit'],
+[/(\d+) part serupa/i,'$1 similar part(s)'],[/^(\d+) sudut$/i,'$1 angles'],[/^FOTO (\d+) SUDUT$/i,'$1-ANGLE PHOTO'],[/^(\d+) FOTO$/i,'$1 PHOTOS'],
+[/^(\d+) bln$/i,'$1 mo'],[/^Rigid dump (\d+) ton, ban (.+)$/i,'Rigid dump $1 ton, tires $2'],
+[/^([\d.]+) Â?°$/,'$1°'],
+];
+function dec(s){return s.replace(/(\d)\.(\d{3})(?!\d)/g,'$1,$2').replace(/(\d),(\d)(?=\s?(?:m\b|M\b|ton|m³|m²|rpm|jam|km))/g,'$1.$2').replace(/km\/jam/g,'km/h').replace(/L\/menit/g,'L/min').replace(/\bHM\b/g,'HM')}
+function words(s){return s.replace(WR,(m)=>cap(m,W[lc(m)]))}
+const cache=new Map();
+function tr(s){
+  if(!s||!/[A-Za-z]/.test(s))return s;
+  if(cache.has(s))return cache.get(s);
+  const lead=s.match(/^\s*/)[0],trail=s.match(/\s*$/)[0],t=s.trim();let out;
+  const k=lc(t);
+  if(D[k]!==undefined){out=D[k];if(t===t.toUpperCase()&&t.length>3)out=out.toUpperCase();else out=cap(t,out)}
+  else{
+    let r=null;for(const [re,rep] of R){if(re.test(t)){r=t.replace(re,rep);break}}
+    if(r!==null)out=dec(r);
+    else if(/ [·›] /.test(t))out=t.split(/( [·›] )/).map((p,i)=>i%2?p:tr(p)).join('');
+    else{out=words(t);if(out===t&&/\d,\d/.test(t))out=t}
+    if(/\bPANJANG\b/.test(t))out=t.replace(/PANJANG/g,'LENGTH').replace(/LEBAR/g,'WIDTH').replace(/TINGGI/g,'HEIGHT');
+    out=dec(out);
+    if(t===t.toUpperCase()&&t.length>3&&out===t)out=words(t.toLowerCase()).toUpperCase()===t.toUpperCase()?t:words(t.toLowerCase()).toUpperCase();
+  }
+  out=lead+out+trail;if(cache.size>4000)cache.clear();cache.set(s,out);return out}
+let lang='id';try{lang=localStorage.getItem('ct-lang')||'id'}catch(_){}
+const TA=['placeholder','title','aria-label'];
+const SKIP={SCRIPT:1,STYLE:1,TEXTAREA:1,OPTION:0};
+let busy=false;
+function doText(n){if(!n.parentNode||SKIP[n.parentNode.nodeName])return;
+  if(n.__t!==undefined&&n.nodeValue!==n.__t)n.__o=n.nodeValue; else if(n.__o===undefined)n.__o=n.nodeValue;
+  const want=lang==='en'?tr(n.__o):n.__o;
+  if(n.nodeValue!==want){n.nodeValue=want}n.__t=want}
+function doAttr(e){if(!e.getAttribute)return;e.__a=e.__a||{};for(const a of TA){const v=e.getAttribute(a);if(v==null)continue;
+  if(e.__a[a]&&e.__a[a].t===v){} else e.__a[a]={o:v,t:v};
+  const want=lang==='en'?tr(e.__a[a].o):e.__a[a].o;if(v!==want)e.setAttribute(a,want);e.__a[a].t=want}}
+function walk(root){if(!root)return;
+  if(root.nodeType===3){doText(root);return}
+  if(root.nodeType!==1)return;
+  doAttr(root);
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT);let n;
+  while(n=w.nextNode()){n.nodeType===3?doText(n):doAttr(n)}}
+const mo=new MutationObserver(ms=>{if(busy)return;busy=true;try{for(const m of ms){
+  if(m.type==='characterData')doText(m.target);
+  else if(m.type==='attributes'){doAttr(m.target)}
+  else m.addedNodes.forEach(walk)}}finally{busy=false;mo.takeRecords()}});
+function run(){busy=true;try{walk(document.body);document.title=lang==='en'?'Contamination Tracker':document.title;document.documentElement.lang=lang}finally{busy=false;mo.takeRecords()}}
+function btns(){document.querySelectorAll('.langbtn').forEach(b=>{const en=lang==='en';b.querySelector('b').textContent=en?'ID':'EN';b.setAttribute('aria-label',en?'Ganti ke Bahasa Indonesia':'Switch to English');b.title=b.getAttribute('aria-label');b.__a={}})}
+function set(l){lang=l;try{localStorage.setItem('ct-lang',l)}catch(_){}run();btns();const t=document.getElementById('toast');}
+const SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 3.9 5.8 3.9 9s-1.3 6.2-3.9 9c-2.6-2.8-3.9-5.8-3.9-9S9.4 5.8 12 3z"/></svg><b>EN</b>';
+function mk(){const b=document.createElement('button');b.type='button';b.className='langbtn';b.innerHTML=SVG;b.onclick=e=>{e.preventDefault();e.stopPropagation();set(lang==='en'?'id':'en')};return b}
+const lg=document.querySelector('#login .lg-logo');if(lg&&lg.tagName==='IMG'){const v=getComputedStyle(document.documentElement).getPropertyValue('--logo').trim().replace(/^url\((['"]?)/,'').replace(/(['"]?)\)$/,'');if(v)lg.src=v}
+const lc1=document.querySelector('#login .lg-card'),hero=document.querySelector('header.hero');
+if(lc1)lc1.appendChild(mk());if(hero)hero.appendChild(mk());
+window.CTLang={set,get:()=>lang,tr};
+mo.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:TA});
+btns();if(lang==='en')run();
 })();
 </script>
