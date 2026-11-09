@@ -1,15 +1,13 @@
-"""Simple login gate. Default demo account: qc / 123.
+"""Login with per-person accounts and roles (see core/users.py).
 
-Change it with the environment variables CT_USER and CT_PASS (or Streamlit secrets of the same name).
-This is a lightweight gate for an internal tool, not a replacement for real authentication.
+First start: one admin is created from CT_USER / CT_PASS (default qc / 123) and must change the password at first login.
 """
 import base64
-import contextlib
-import hmac
-import os
 from pathlib import Path
 
 import streamlit as st
+
+from core import users
 
 LOGO = Path(__file__).resolve().parents[1] / "assets" / "logo.png"
 
@@ -48,15 +46,6 @@ CSS = """
 """
 
 
-def _creds() -> tuple[str, str]:
-    user = os.environ.get("CT_USER")
-    pw = os.environ.get("CT_PASS")
-    with contextlib.suppress(Exception):  # no secrets file
-        user = user or st.secrets.get("CT_USER")
-        pw = pw or st.secrets.get("CT_PASS")
-    return user or "qc", pw or "123"
-
-
 def _logo_uri() -> str:
     return "data:image/png;base64," + base64.b64encode(LOGO.read_bytes()).decode() if LOGO.exists() else ""
 
@@ -65,8 +54,22 @@ def logged_in() -> bool:
     return bool(st.session_state.get("ct_auth"))
 
 
+def current() -> dict:
+    """The signed-in user ({username, name, role, must_change}); empty dict when signed out."""
+    return st.session_state.get("ct_user") or {}
+
+
 def logout() -> None:
+    users.audit(current().get("username", ""), "logout")
     st.session_state.pop("ct_auth", None)
+    st.session_state.pop("ct_user", None)
+
+
+def require(page: str) -> None:
+    """Stop the page when the signed-in role may not open it (the sidebar already hides it)."""
+    if not users.can(current().get("role", ""), page):
+        st.error("Anda tidak memiliki akses ke halaman ini.")
+        st.stop()
 
 
 def login_view() -> None:
@@ -87,8 +90,9 @@ def login_view() -> None:
                 p = st.text_input("Password", placeholder="Password", type="password", label_visibility="collapsed")
                 ok = st.form_submit_button("Login", use_container_width=True)
             if ok:
-                cu, cp = _creds()
-                if hmac.compare_digest(u.strip().lower().encode(), cu.lower().encode()) and hmac.compare_digest(p.encode(), cp.encode()):
+                user, msg = users.authenticate(u, p)
+                if user:
                     st.session_state["ct_auth"] = True
+                    st.session_state["ct_user"] = user
                     st.rerun()
-                st.error("Username atau password salah.")
+                st.error(msg)

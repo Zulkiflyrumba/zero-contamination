@@ -14,6 +14,9 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
+from core import cloud
+
+LAST_SYNC_ERROR = [""]
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 PHOTO_DIR = DATA / "photos"
@@ -45,6 +48,12 @@ CREATE TABLE IF NOT EXISTS cases(
   lambung TEXT, note TEXT, builtin INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS operations(
   date TEXT NOT NULL, lambung TEXT NOT NULL, area TEXT, PRIMARY KEY(date, lambung));
+CREATE TABLE IF NOT EXISTS users(
+  username TEXT PRIMARY KEY, name TEXT, role TEXT NOT NULL, pw_hash TEXT NOT NULL,
+  active INTEGER DEFAULT 1, must_change INTEGER DEFAULT 0, created TEXT);
+CREATE TABLE IF NOT EXISTS audit(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, user TEXT, action TEXT, detail TEXT);
+CREATE TABLE IF NOT EXISTS attempts(username TEXT NOT NULL, ts REAL NOT NULL);
 """
 
 STATUSES = ["belum", "lengkap", "hilang", "rusak"]
@@ -68,20 +77,61 @@ def connect(path: str | Path | None = None):
     try:
         yield con
         con.commit()
+        _flush(con)
     finally:
         con.close()
+
+
+def _flush(con: sqlite3.Connection) -> None:
+    """Best effort push to Supabase; a failure keeps the changes queued and is retried on the next write."""
+    if not cloud.enabled():
+        return
+    try:
+        if cloud.pending(con):
+            cloud.flush(con, DATA)
+            con.commit()
+    except (cloud.CloudError, sqlite3.Error, OSError) as e:
+        LAST_SYNC_ERROR[0] = str(e)
+    else:
+        LAST_SYNC_ERROR[0] = ""
 
 
 def init_db(path: str | Path | None = None) -> None:
     """Create tables and seed the catalog on first run."""
     with connect(path) as con:
-        con.executescript(SCHEMA)
+        con.executescript(SCHEMA + cloud.trigger_sql())
+        if con.execute("SELECT COUNT(*) FROM units").fetchone()[0] == 0 and cloud.enabled() and _try_pull(con):
+            return
         if con.execute("SELECT COUNT(*) FROM units").fetchone()[0] == 0 and SEED.exists():
             _seed(con)
             con.execute(f"PRAGMA user_version={SEED_VERSION}")
         elif con.execute("PRAGMA user_version").fetchone()[0] < SEED_VERSION and SEED.exists():
             _sync_new_parts(con)
             con.execute(f"PRAGMA user_version={SEED_VERSION}")
+
+
+def _try_pull(con: sqlite3.Connection) -> bool:
+    """Fresh local database: rebuild it from Supabase when the cloud already holds data."""
+    try:
+        if not cloud.remote_has_data():
+            return False
+        cloud.pull_all(con, DATA)
+        return True
+    except (cloud.CloudError, sqlite3.Error, OSError) as e:
+        LAST_SYNC_ERROR[0] = str(e)
+        return False
+
+
+def cloud_pull(path=None) -> dict:
+    """Manual: replace local data with the cloud copy (changes still queued locally are pushed first)."""
+    with connect(path) as con:
+        cloud.flush(con, DATA)
+        return cloud.pull_all(con, DATA)
+
+
+def cloud_push_all(path=None) -> int:
+    with connect(path) as con:
+        return cloud.push_all(con, DATA)
 
 
 def _sync_new_parts(con: sqlite3.Connection) -> None:
@@ -275,7 +325,10 @@ def _b64(rel: str) -> str:
     return "data:image/jpeg;base64," + base64.b64encode((DATA / rel).read_bytes()).decode()
 
 
-def export_payload(path=None) -> dict:
+def export_payload(path=None, photo_fn=None) -> dict:
+    """Whole database as one JSON-able dict. ``photo_fn(rel_path)`` turns a photo path into what is stored
+    (default: an inline data URI; the data package stores the relative path instead)."""
+    photo_fn = photo_fn or _b64
     m = meta()
     with connect(path) as con:
         units = [dict(r) for r in con.execute("SELECT * FROM units ORDER BY kind, name")]
@@ -290,9 +343,9 @@ def export_payload(path=None) -> dict:
             if not f.exists():
                 continue
             if ph["role"] == "find":
-                sample["find"].append(_b64(ph["file"]))
+                sample["find"].append(photo_fn(ph["file"]))
             else:
-                photos.setdefault(ph["part_id"], []).append(_b64(ph["file"]))
+                photos.setdefault(ph["part_id"], []).append(photo_fn(ph["file"]))
         spec: dict[str, dict] = {}
         for s in con.execute("SELECT * FROM unit_spec"):
             spec.setdefault(s["unit_id"], {"src": "database", "rows": []})["rows"].append([s["label"], s["value"], s["src"]])
