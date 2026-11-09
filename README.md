@@ -50,3 +50,27 @@ Database SQLite dibuat otomatis dari `data/catalog.json`. Ubah lokasinya dengan 
 - Embed Streamlit bersifat baca-saja untuk umpan balik. Model 3D unggahan tersimpan di browser pengguna.
 
 - Akurasi identifikasi bergantung pada foto referensi nyata. Gunakan tombol "Benar, simpan foto sebagai referensi" di versi artifact dan crop benda sebelum Lacak.
+
+## Cocok 3D dan analisis kerusakan
+Setelah Lacak sumber, benda pada foto dipisahkan dari latar (siluet), dibentuk menjadi model 3D relief berwarna foto, lalu dicocokkan ke model part utuh dari kandidat teratas. Mode **Cocokkan** menganimasikan overlay temuan ke referensi, mode **Kerusakan** menandai material hilang (merah) dan tonjolan (kuning) serta menampilkan persentase kerusakan per zona. Isi Ukuran (mm) agar skala benar; tanpa itu temuan dianggap sepanjang part utuh sehingga serpihan tampak lebih utuh. Kedalaman model temuan adalah perkiraan dan angka kerusakan berasal dari siluet foto, bukan pemindaian 3D; gunakan sebagai indikasi untuk dikonfirmasi tim QC.
+
+## Paket data untuk aplikasi HTML / Android
+Katalog > Ekspor > **Siapkan paket data** membuat satu file `.ctpack` (zip): `manifest.json` (versi data dan SHA-256 tiap file), `payload.json`, `photos/` dan `models/`. Di aplikasi HTML / Android buka **Data Center > Import Data Package**; data, foto, dan model 3D terpasang tanpa memperbarui aplikasi. Versi data berbentuk `tahun.bulan.tanggal.jam-hash`, jadi paket yang isinya sama tidak diimpor dua kali. Data lokal yang ditambah di aplikasi tetap dipertahankan. Sinkronisasi langsung ke server (tombol Check for Updates) adalah tahap berikutnya dan memakai format paket yang sama.
+
+## Keamanan: akun per orang dan paket terkunci
+
+- Login awal `qc` / `123` (atau dari `CT_USER` / `CT_PASS`) bersifat admin dan **wajib ganti password** saat masuk pertama. Di server, set `CT_USER`/`CT_PASS` lewat secrets, jangan di repo.
+- Peran: **admin** (semua fitur, kelola pengguna, ekspor paket), **operator** (Tracker, Galeri, Inspeksi & Kasus), **viewer** (Tracker dan Galeri).
+- Password minimal 8 karakter, huruf dan angka. Salah 5 kali dalam 5 menit mengunci sementara. Semua login, perubahan akun, dan ekspor tercatat di Catatan aktivitas.
+- Paket `.ctpack` bisa dikunci kata sandi (AES-256-GCM, PBKDF2 200 ribu iterasi). Bagikan kata sandi lewat jalur terpisah dari filenya. Data yang sudah diimpor tersimpan tidak terenkripsi di perangkat.
+- Pakai HTTPS atau VPN, repo dan app private.
+
+## Supabase (data terpusat)
+
+1. Buat proyek Supabase (region terdekat, atas nama tim). Di **SQL Editor** jalankan `supabase/schema.sql`. Skrip ini membuat tabel, mengaktifkan RLS di semua tabel, dan membuat bucket privat `ct-files`.
+2. Isi `SUPABASE_URL` dan `SUPABASE_SERVICE_KEY` (service_role) di Secrets Streamlit, lihat `.streamlit/secrets.toml.example`. Kunci ini hanya untuk server; jangan masukkan ke repo atau APK.
+3. Jalankan app. Saat pertama kali, katalog diunggah ke Supabase. Kalau server restart dengan disk kosong, data dipulihkan dari Supabase.
+4. Setiap perubahan (kasus, inspeksi, part, foto, akun, catatan aktivitas) dicatat lewat trigger dan dikirim ke Supabase. Kalau koneksi gagal, perubahan tetap antre dan dikirim pada perubahan berikutnya.
+5. Admin dapat memantau status, menarik data terbaru, atau mengirim ulang semua data di halaman **Pengguna > Cloud (Supabase)**.
+
+Tahap berikutnya (belum dibuat): login APK dan unduh pembaruan, antrean Pending Sync, dan persetujuan admin atas `field_submissions`.

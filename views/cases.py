@@ -8,7 +8,9 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from core import db, theme
+from core import auth, db, theme
+
+auth.require("cases")
 
 META = db.meta()
 theme.hero("Inspeksi dan kasus","Status part per nomor lambung dan catatan temuan yang sudah ditelusuri.")

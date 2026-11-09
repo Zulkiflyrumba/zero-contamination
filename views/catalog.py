@@ -9,7 +9,9 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from core import db, models, theme
+from core import auth, db, models, pack, theme, users
+
+auth.require("catalog")
 
 META = db.meta()
 KINDS = list(META["kind_label"].keys())
@@ -154,6 +156,24 @@ with tab_ops:
     st.caption(f"{n} baris operasi tersimpan.")
 
 with tab_export:
+    st.subheader("Paket data untuk aplikasi HTML / Android")
+    st.caption("Satu file .ctpack berisi seluruh data (unit, part, riwayat, inspeksi, kasus, operasi), foto referensi, dan model 3D. "
+               "Di aplikasi HTML / Android buka Data Center lalu Import Data Package. Aplikasi tidak perlu diperbarui.")
+    pk_pw = st.text_input("Kata sandi paket (opsional, disarankan)", type="password", key="pk_pw",
+                          help="Paket berisi seluruh data. Dengan kata sandi, isinya tidak terbaca bila file terkirim ke orang yang salah. Sampaikan kata sandi lewat jalur terpisah.")
+    if st.button("Siapkan paket data", key="pk_build"):
+        with st.spinner("Menyusun paket..."):
+            st.session_state["pk"] = pack.build(password=pk_pw or None)
+        users.audit(auth.current().get("username", ""), "paket_data_dibuat",
+                    f'{st.session_state["pk"][1]["dataVersion"]} {"terkunci" if pk_pw else "TANPA kata sandi"}')
+    if "pk" in st.session_state:
+        pk_bytes, pk_man = st.session_state["pk"]
+        c = pk_man["counts"]
+        st.success(f'Versi data {pk_man["dataVersion"]} · {c["units"]} unit · {c["parts"]} part · {c["history"]} riwayat · '
+                   f'{c["photos"]} foto · {c["models"]} model 3D · {len(pk_bytes) / 1e6:.1f} MB · '
+                   f'{"dikunci dengan kata sandi" if pk_man.get("encrypted") else "tanpa kata sandi"}')
+        st.download_button("Unduh paket data (.ctpack)", pk_bytes, pack.filename(pk_man), "application/zip", key="pk_dl")
+    st.divider()
     allp = pd.DataFrame(db.list_parts())
     st.download_button("Unduh semua part (CSV)", allp.to_csv(index=False).encode("utf-8"), f"parts-{datetime.now().astimezone().date()}.csv", "text/csv")
     st.download_button("Unduh payload JSON (untuk front end)", json.dumps(db.export_payload(), ensure_ascii=False).encode("utf-8"),

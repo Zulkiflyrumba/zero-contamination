@@ -289,6 +289,26 @@ header.hero>.langbtn{right:30px;top:66px}
 @media (max-width:600px){header.hero>.langbtn{right:18px;top:52px}}
 @media (max-width:760px){#login .lg-card>.langbtn{background:rgba(255,255,255,.22);color:#fff;border-color:rgba(255,255,255,.5)}}
 </style>
+<style>
+.dmgp{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.dmg-h{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.dmg-h small{display:block;font-size:12px;opacity:.7;margin-top:2px}
+.dmg-big{font:700 38px/1 var(--f-display);letter-spacing:-.02em}
+.meter.big{height:10px}
+.dmg-g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0}
+.dmg-g div{background:var(--panel2);border-radius:10px;padding:8px 10px}
+.dmg-g dt{font-size:11px;opacity:.7}.dmg-g dd{margin:2px 0 0;font:700 18px var(--f-display)}
+.dmg-z{display:flex;flex-direction:column;gap:5px;font-size:12px}
+.dmg-z .zr{display:grid;grid-template-columns:62px 1fr 40px;gap:8px;align-items:center}.dmg-z .zr .meter{margin:0}.dmg-z em{font-style:normal;text-align:right;font-weight:600}
+.dmg-s{display:flex;align-items:center;gap:10px;font-size:12px;flex-wrap:wrap}.dmg-s input{flex:1;min-width:140px}
+@media (max-width:700px){.dmg-g{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style>
+.dc-v{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.dc-v b{font:700 22px var(--f-display)}
+.dc-s{display:block;opacity:.7;margin:-6px 0 4px}
+.dc-r{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.dc-r small{display:block;opacity:.7;margin-top:2px}
+</style>
 <style>body.embed nav.rail,body.embed #v-kasus,body.embed .note{display:none!important}body.embed:not(.embed-db) #v-database{display:none!important}body.embed-db #v-analisis,body.embed-db #unitSec,body.embed-db header.hero{display:none!important}body.embed{padding:0 0 8px!important;background:transparent!important}</style>
 <div class="wrap">
 <div id="login" hidden><div class="lg-card"><div class="lg-left"><img class="lg-logo" alt="Adaro"><span class="sh"></span><h2>Selamat datang</h2><p>Contamination Tracker. Telusuri sumber kontaminan di PIT dan ROM dari foto temuan.</p></div>
@@ -296,7 +316,7 @@ header.hero>.langbtn{right:30px;top:66px}
 <header class="hero"><div class="hlogo" role="img" aria-label="Adaro"></div>
   <div class="brand"><div><span class="eyebrow">PIT · ROM · Foreign material</span><h1>Contamination Tracker</h1><div class="sub">Telusuri sumber kontaminan di PIT dan ROM dari foto temuan</div></div></div>
   <div class="hstats" id="hstats"></div>
-  <nav class="rail" role="tablist" aria-label="Tampilan"><button role="tab" id="tab-analisis" aria-selected="true" data-view="analisis" title="Analisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><span class="lbl">Analisis</span></button><button role="tab" id="tab-database" aria-selected="false" data-view="database" title="Basis Data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg><span class="lbl">Basis Data</span></button><button role="tab" id="tab-kasus" aria-selected="false" data-view="kasus" title="Kasus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5h6M9 11h6M9 15h4"/></svg><span class="lbl">Kasus</span></button></nav>
+  <nav class="rail" role="tablist" aria-label="Tampilan"><button role="tab" id="tab-analisis" aria-selected="true" data-view="analisis" title="Analisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><span class="lbl">Analisis</span></button><button role="tab" id="tab-database" aria-selected="false" data-view="database" title="Basis Data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg><span class="lbl">Basis Data</span></button><button role="tab" id="tab-kasus" aria-selected="false" data-view="kasus" title="Kasus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 4.5h6M9 11h6M9 15h4"/></svg><span class="lbl">Kasus</span></button><button role="tab" id="tab-data" aria-selected="false" data-view="data" title="Data Center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></svg><span class="lbl">Data Center</span></button></nav>
 </header>
 
 <section id="v-analisis" class="grid">
@@ -338,10 +358,13 @@ header.hero>.langbtn{right:30px;top:66px}
         <button data-m="scan" class="on">Scan</button>
         <button data-m="recon">Rekonstruksi</button>
         <button data-m="real">Realistis</button>
+        <button data-m="fit">Cocokkan</button>
+        <button data-m="dmg">Kerusakan</button>
         <button data-m="ref">Overlay referensi</button>
         <button data-m="spin" class="on">Putar</button>
       </div>
     </div>
+    <div class="dmgp" id="dmgp" hidden></div>
     <div class="alert" id="alert" hidden></div>
     <dl class="diag" id="diag"></dl>
   </main>
@@ -378,6 +401,9 @@ header.hero>.langbtn{right:30px;top:66px}
     <div id="parts"></div>
   </main>
 </section>
+<section id="v-data" hidden style="margin-top:16px;max-width:640px"><div class="card"><div class="ph"><span>Contamination Tracker · Data Center</span></div><div class="body" id="dcBox"></div>
+<div class="body" style="gap:10px"><label>Kata sandi paket (jika paket dikunci)<input type="password" id="dcPw" autocomplete="off" placeholder="Kosongkan bila paket tidak dikunci"></label><label class="btn pri" style="cursor:pointer;text-align:center">Import Data Package<input type="file" id="dcFile" accept=".ctpack,.zip,application/zip" hidden></label><button class="btn" id="dcReset">Kembali ke data bawaan</button><button class="btn" disabled title="Sinkronisasi langsung ke server akan menyusul">Check for Updates</button><div class="hint" id="dcSt" aria-live="polite"></div>
+<div class="hint">Buat paket di web app: Katalog &gt; Ekspor &gt; Siapkan paket data, lalu kirim file .ctpack ke HP (WhatsApp, kabel, atau flashdisk). Data lokal yang Anda tambah di aplikasi ini tetap dipertahankan. Pembaruan lewat paket tidak butuh pembaruan aplikasi.</div></div></div></section>
 <section id="v-kasus" hidden style="margin-top:16px"><div class="card"><div class="ph"><span>Riwayat kasus kontaminasi</span><small id="kCount"></small></div><div id="kList"></div></div></section>
 <p class="note">Prototipe. Foto referensi dan temuan di sini dibuat otomatis dari model 3D sederhana, kecuali foto kasus nyata HD785 #512. Kemiripan dihitung dari warna, bentuk siluet, rasio ukuran, dan konteks lokasi, jadi hasilnya berupa kandidat berperingkat untuk dikonfirmasi tim QC, bukan kepastian. Data tersimpan di browser ini, dan di basis data bersama bila tersedia.</p>
 </div>
@@ -591,6 +617,8 @@ Viewer.prototype.reconMs=3400;
 /* ===== MESIN KEMIRIPAN ===== */
 const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
 function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360}return [h,mx?d/mx:0,mx]}
+/* warna latar bantalan = rata-rata tepi foto sendiri, supaya bantalan tidak dianggap benda */
+function padColor(im){const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,16,16);const d=x.getImageData(0,0,16,16).data;let r=0,g=0,b=0,n=0;for(let i=0;i<16;i++)for(const [a,q] of [[i,0],[i,15],[0,i],[15,i]]){const k=(q*16+a)*4;r+=d[k];g+=d[k+1];b+=d[k+2];n++}return `rgb(${r/n|0},${g/n|0},${b/n|0})`}
 function descCore(im){
   const N=64,cv=document.createElement('canvas');cv.width=N;cv.height=N;const x=cv.getContext('2d',{willReadFrequently:true});
   const sc=Math.min(N/im.width,N/im.height),w=im.width*sc,h=im.height*sc;x.fillStyle='#808080';x.fillRect(0,0,N,N);x.drawImage(im,(N-w)/2,(N-h)/2,w,h);
@@ -662,10 +690,12 @@ async function analyze(photos,ctx,partsAll,unitsAll,prog){
     let sc=.58*vis,wt=.58;if(sz!=null){sc+=.14*sz;wt+=.14}if(ty!=null){sc+=.08*ty;wt+=.08}sc+=.12*ar+.08*pr;wt+=.2;
     rows.push({p,vis,sz,ty,ar,pr,score:sc/wt})}
   rows.sort((a,b)=>b.score-a.score);
+  let segs=null;try{segs=await matchRerank(rows,photos,ctx,(i,n)=>prog&&prog(i,n,1))}catch(e){console.error(e)}
+  rows.sort((a,b)=>b.score-a.score);
   const mx=rows[0]?rows[0].score:0,T_=.07;let z=0;rows.forEach(r=>{r.e=Math.exp((r.score-mx)/T_);z+=r.e});rows.forEach(r=>r.conf=r.e/z);
   const um={};rows.forEach(r=>{const u=um[r.p.unitId]||(um[r.p.unitId]={u:unitsAll.find(x=>x.id===r.p.unitId),conf:0,top:r});u.conf+=r.conf});
   const units=Object.values(um).filter(x=>x.u).sort((a,b)=>b.conf-a.conf);
-  return {rows,units,angles:q.length}}
+  return {rows,units,angles:q.length,segs}}
 /* ===== PENYIMPANAN ===== */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -713,7 +743,7 @@ async function runAnalysis(){
   if(!photos.length)return;$('run').disabled=true;$('run').textContent='Menganalisis…';
   setStage('<b>Memproses foto</b>Ekstraksi siluet, warna, tekstur…');
   await new Promise(r=>setTimeout(r,30));
-  try{result=await analyze(photos,ctxNow(),PARTS.filter(p=>p.fm!==false),UNITS,(i,n)=>setStage(`<b>Menyiapkan basis referensi</b>Part ${i+1} dari ${n}`))}catch(e){console.error(e);toast('Analisis gagal');$('run').disabled=false;$('run').textContent='Lacak sumber';return}
+  try{result=await analyze(photos,ctxNow(),PARTS.filter(p=>p.fm!==false),UNITS,(i,n,t)=>setStage(t?`<b>Mencocokkan bentuk 3D</b>Kandidat ${i+1} dari ${n}`:`<b>Menyiapkan basis referensi</b>Part ${i+1} dari ${n}`))}catch(e){console.error(e);toast('Analisis gagal');$('run').disabled=false;$('run').textContent='Lacak sumber';return}
   sel=0;renderResult();$('run').disabled=false;$('run').textContent='Lacak sumber'}
 function setStage(h){const s=$('stage');if(h){s.innerHTML=h;s.classList.add('show')}else s.classList.remove('show')}
 function confLabel(c,angles){const a=c*(angles>=3?1:angles===2?.95:.88);return a>.5?['Tinggi','ok']:a>.25?['Sedang','warn']:['Rendah','bad']}
@@ -728,11 +758,11 @@ function showSelected(quick){
   const r=result.rows[sel],p=r.p,u=UNITS.find(x=>x.id===p.unitId)||{name:'?',kind:''};
   const [cl,cc]=confLabel(r.conf,result.angles);
   $('vtitle').textContent='2 · Rekonstruksi 3D';$('vmeta').textContent=`${KIND_LABEL[p.kind]||p.kind} · ${p.L}×${p.W}×${p.H} mm`;
-  if(!viewer){viewer=new Viewer($('vp'));viewer.onMode=m=>{document.querySelectorAll('.ctl [data-m]').forEach(b=>{if(['scan','recon','real'].includes(b.dataset.m))b.classList.toggle('on',b.dataset.m===m)});$('hudTL').textContent='MODE: '+({scan:'SCAN POINT CLOUD',recon:'REKONSTRUKSI MESH',real:'RENDER REALISTIS'}[m])};
+  if(!viewer){viewer=new Viewer($('vp'));viewer.onMode=m=>{document.querySelectorAll('.ctl [data-m]').forEach(b=>{if(['scan','recon','real','fit','dmg'].includes(b.dataset.m))b.classList.toggle('on',b.dataset.m===m)});$('hudTL').textContent='MODE: '+({scan:'SCAN POINT CLOUD',recon:'REKONSTRUKSI MESH',real:'RENDER REALISTIS',fit:'PENCOCOKAN OVERLAY',dmg:'ANALISIS KERUSAKAN'}[m])};viewer.onRef=v=>{const b=document.querySelector('.ctl [data-m=ref]');b&&b.classList.toggle('on',v)};
     viewer.onProg=u=>{$('prog').firstElementChild.style.width=(u*100)+'%'}}
   setStage('');const wear=.55+Math.min(.3,(result.rows[0].vis||0)*.0);
-  viewer.setObject(p.kind,{wear,mud:.5,color:p.color,seed:11},{wear:0,mud:0,color:p.color,seed:3});
-  $('hudTR').textContent=`HIPOTESIS #${sel+1} · ${(r.conf*100).toFixed(0)}%`;$('hudBL').textContent=`FOTO ${result.angles} SUDUT`;$('hudBR').textContent=ctxNow().loc.toUpperCase();
+  if(r.m&&r.m.ok){viewer.setMatch(r.m);renderDamage(r)}else{viewer.setObject(p.kind,{wear,mud:.5,color:p.color,seed:11},{wear:0,mud:0,color:p.color,seed:3});renderDamage(null)}
+  $('hudTR').textContent=`HIPOTESIS #${sel+1} · ${(r.conf*100).toFixed(0)}%`;$('hudBL').textContent=`FOTO ${result.angles} SUDUT`+(r.m&&r.m.ok?` · KERUSAKAN ${Math.round(r.m.total*100)}%`:'');$('hudBR').textContent=ctxNow().loc.toUpperCase();
   if(quick){viewer.reconMs=1800;viewer.setMode('recon')}else{viewer.reconMs=3400;viewer.setMode('scan');setTimeout(()=>{if(viewer.mode==='scan'&&result){viewer.setMode('recon')}},1700)}
   renderLambung(p);
   autoPlayed=false;updateUnitSection();
@@ -757,6 +787,7 @@ function showSelected(quick){
 document.querySelector('.ctl').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b||!viewer||!viewer.cur)return;const m=b.dataset.m;
   if(m==='spin'){viewer.spin=!viewer.spin;b.classList.toggle('on',viewer.spin)}
   else if(m==='ref'){viewer.setRef(!viewer.ref);b.classList.toggle('on',viewer.ref)}
+  else if((m==='fit'||m==='dmg')&&!viewer.matchOn){toast('Siluet benda tidak terdeteksi, mode ini butuh model dari foto')}
   else{viewer.reconMs=m==='recon'?3400:1;viewer.setMode(m)}});
 
 /* ===== NOMOR LAMBUNG ===== */
@@ -839,10 +870,10 @@ $('addUnit').onclick=()=>{openModal('Tambah unit',`<div class="row2"><label>Mode
 function renderKasus(){const all=CASES0.concat(Object.values(store.data.cases).sort((a,b)=>(b.ts||0)-(a.ts||0)));$('kCount').textContent=all.length+' kasus';
   $('kList').innerHTML=all.map(c=>{const p=PARTS.find(x=>x.id===c.partId)||{name:'(part dihapus)',kind:'bolt',photos:[]};const u=UNITS.find(x=>x.id===c.unitId)||{name:'?'};const th=c.builtin?CASE_FIND.concat(CASE_REF):[refThumbs(p)[0]];
     return `<div class="body" style="border-bottom:1px solid var(--line)"><div class="chips"><span class="chip on">${esc(u.name)} · No. ${esc(c.no)}</span><span class="chip">${esc(c.date)}</span><span class="chip">${esc(c.loc)}</span>${c.builtin?'<span class="chip ok">kasus asli</span>':''}</div><b>${esc(p.name)}</b><div class="hint">${esc(c.note)}</div><div class="angles" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">${th.map(s=>`<div class="ang"><img src="${s}" alt=""></div>`).join('')}</div></div>`}).join('')}
-function route(){const v=location.hash==='#database'?'database':location.hash==='#kasus'?'kasus':'analisis';
-  $('v-analisis').hidden=v!=='analisis';$('v-database').hidden=v!=='database';$('v-kasus').hidden=v!=='kasus';
+function route(){const v=location.hash==='#database'?'database':location.hash==='#kasus'?'kasus':location.hash==='#data'?'data':'analisis';
+  $('v-analisis').hidden=v!=='analisis';$('v-database').hidden=v!=='database';$('v-kasus').hidden=v!=='kasus';$('v-data').hidden=v!=='data';
   document.querySelectorAll('nav [data-view]').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===v));
-  if(v==='database')renderDB();if(v==='kasus')renderKasus()}
+  if(v==='database')renderDB();if(v==='kasus')renderKasus();if(v==='data')renderData()}
 document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)location.hash=b.dataset.view});
 addEventListener('hashchange',route);
 renderSamples();
@@ -1049,11 +1080,11 @@ const _uu=updateUnitSection;updateUnitSection=function(){_uu();const u=UNITS.fin
 idb.open().then(()=>loadAllCustom());
 
 /* ===== model tersimpan di repo (Streamlit: static/models/<unit>/) ===== */
-const REPO=(window.CT_BOOT&&window.CT_BOOT.models)||{},REPOLOAD={};let LASTPICK='';
+const REPO=(window.CT_BOOT&&window.CT_BOOT.models)||(window.CT_PACK&&window.CT_PACK.models)||{},REPOLOAD={};let LASTPICK='';
 function repoBase(id){let o=location.origin;try{o=window.parent.location.origin}catch(e){}return o+'/app/static/models/'+id+'/'}
 async function loadRepoModel(u){const cfg=REPO[u.id];if(!cfg||CUSTOM[u.id]||REPOLOAD[u.id])return;REPOLOAD[u.id]=1;
-  try{toast('Memuat model 3D '+u.name+' dari repo…');const base=repoBase(u.id);
-    const fl=await Promise.all(cfg.files.map(async n=>{const r=await fetch(base+encodeURIComponent(n));if(!r.ok)throw new Error(n+' '+r.status);return {name:n,blob:await r.blob()}}));
+  try{toast('Memuat model 3D '+u.name+' dari repo…');const base=repoBase(u.id),pm=window.CT_PACK&&window.CT_PACK.modelFiles&&window.CT_PACK.modelFiles[u.id];
+    const fl=pm?cfg.files.filter(n=>pm[n]).map(n=>({name:n,blob:pm[n]})):await Promise.all(cfg.files.map(async n=>{const r=await fetch(base+encodeURIComponent(n));if(!r.ok)throw new Error(n+' '+r.status);return {name:n,blob:await r.blob()}}));
     Object.entries(cfg.anch||{}).forEach(([k,v])=>{if(!ANCH[u.id+'|'+k])ANCH[u.id+'|'+k]=v});
     await applyCustom(u,fl,cfg.opts,false);CUSTOM[u.id].repo=true;uviewer&&(uviewer.key=null);updateUnitSection()}
   catch(e){toast('Model repo gagal dimuat: '+(e.message||e));REPOLOAD[u.id]=0}}
@@ -1148,6 +1179,226 @@ if(!ok)show();
 $('lgForm').onsubmit=e=>{e.preventDefault();if($('lgU').value.trim().toLowerCase()==='qc'&&$('lgP').value==='123'){try{sessionStorage.setItem('ct-auth','1')}catch(_){}lg.hidden=true;document.body.classList.remove('locked');$('lgP').value='';$('lgErr').textContent='';dispatchEvent(new Event('resize'))}else{$('lgErr').textContent='Username atau password salah.'}};
 const rail=document.querySelector('nav.rail');if(rail){const b=document.createElement('button');b.className='lo';b.type='button';b.title='Keluar';b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 8l4 4-4 4M20 12H9"/></svg><span class="lbl">Keluar</span>';b.onclick=()=>{try{sessionStorage.removeItem('ct-auth')}catch(_){}show()};rail.appendChild(b)}
 })();
+/* ===== COCOK 3D + ANALISIS KERUSAKAN =====
+   1) Segmentasi benda dari foto (siluet).  2) Part referensi utuh divoxelkan dari model 3D-nya.
+   3) Pose dicari dengan mencocokkan siluet foto ke 26 arah pandang referensi (+rotasi dalam bidang).
+   4) Model 3D temuan = siluet foto digelembungkan jadi relief berwarna foto (kedalaman PERKIRAAN).
+   5) Kerusakan = bagian referensi utuh yang tidak tertutup siluet temuan (hilang) + siluet temuan di luar referensi (tonjolan). */
+const _vdirs=(()=>{const a=[];for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++)if(x||y||z)a.push(new T.Vector3(x,y,z).normalize());return a})();
+function viewBasis(v){const h=Math.abs(v.y)<.9?new T.Vector3(0,1,0):new T.Vector3(1,0,0);const u1=new T.Vector3().crossVectors(h,v).normalize();return [u1,new T.Vector3().crossVectors(v,u1).normalize()]}
+const _basis=_vdirs.map(viewBasis);
+
+/* ---------- segmentasi foto ---------- */
+const _seg={};
+async function segPhoto(src){
+  if(_seg[src])return _seg[src];
+  const im=await loadImg(src),sc=128/Math.max(im.width,im.height),W=Math.max(16,Math.round(im.width*sc)),H=Math.max(16,Math.round(im.height*sc));
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const cx=cv.getContext('2d',{willReadFrequently:true});cx.drawImage(im,0,0,W,H);
+  const d=cx.getImageData(0,0,W,H).data,N=W*H;
+  let br=0,bg=0,bb=0,bn=0;for(let i=0;i<W;i++)for(const y of [1,2,H-2,H-3]){const k=(y*W+i)*4;br+=d[k];bg+=d[k+1];bb+=d[k+2];bn++}
+  for(let j=0;j<H;j++)for(const x of [1,2,W-2,W-3]){const k=(j*W+x)*4;br+=d[k];bg+=d[k+1];bb+=d[k+2];bn++}
+  br/=bn;bg/=bn;bb/=bn;
+  const dist=new Float32Array(N);for(let i=0;i<N;i++){const k=i*4;dist[i]=Math.hypot(d[k]-br,d[k+1]-bg,d[k+2]-bb)}
+  let thr=40;{const hist=new Array(64).fill(0);for(const v of dist)hist[Math.min(63,v/6|0)]++;let tot=N,sum=0;hist.forEach((c,i)=>sum+=i*c);let wb=0,sb=0,mx=0,best=0;for(let t=0;t<64;t++){wb+=hist[t];if(!wb)continue;const wf=tot-wb;if(!wf)break;sb+=t*hist[t];const mb=sb/wb,mf=(sum-sb)/wf,bv=wb*wf*(mb-mf)*(mb-mf);if(bv>mx){mx=bv;best=t}}thr=Math.max(22,(best+1)*6)}
+  let m1=new Uint8Array(N);for(let i=0;i<N;i++)m1[i]=dist[i]>thr?1:0;
+  const m2=new Uint8Array(N);for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){let c=0;for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)c+=m1[(y+a)*W+x+b];m2[y*W+x]=c>=5?1:0}
+  const lab=new Int32Array(N);let bestL=0,bestS=0,L=0;const st=[];
+  for(let i=0;i<N;i++){if(!m2[i]||lab[i])continue;L++;let sz=0,sx=0,sy=0,tb=false;st.push(i);lab[i]=L;
+    while(st.length){const q=st.pop();sz++;const qx=q%W,qy=(q/W)|0;sx+=qx;sy+=qy;if(qx===0||qy===0||qx===W-1||qy===H-1)tb=true;
+      for(const [ax,ay] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=qx+ax,ny=qy+ay;if(nx<0||ny<0||nx>=W||ny>=H)continue;const ni=ny*W+nx;if(m2[ni]&&!lab[ni]){lab[ni]=L;st.push(ni)}}}
+    const s=sz*Math.exp(-((sx/sz-W/2)**2+(sy/sz-H/2)**2)/(2*(Math.max(W,H)*.38)**2))*(tb?.45:1);if(s>bestS){bestS=s;bestL=L}}
+  const mask=new Uint8Array(N);let area=0,mx=0,my=0;for(let i=0;i<N;i++)if(lab[i]===bestL){mask[i]=1;area++;mx+=i%W;my+=(i/W)|0}
+  if(area<N*.01)return _seg[src]={ok:false};
+  mx/=area;my/=area;
+  // isi lubang kecil (bayangan/pantulan) tetapi pertahankan lubang besar (lubang baut dsb.)
+  {const seen=new Uint8Array(N),stk=[];for(let i=0;i<N;i++){if(mask[i]||seen[i])continue;let touch=false,sz=0;const cells=[];stk.push(i);seen[i]=1;
+    while(stk.length){const q=stk.pop();sz++;cells.push(q);const qx=q%W,qy=(q/W)|0;if(qx===0||qy===0||qx===W-1||qy===H-1)touch=true;for(const [ax,ay] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=qx+ax,ny=qy+ay;if(nx<0||ny<0||nx>=W||ny>=H)continue;const ni=ny*W+nx;if(!mask[ni]&&!seen[ni]){seen[ni]=1;stk.push(ni)}}}
+    if(!touch&&sz<area*.004){cells.forEach(c=>{mask[c]=1});area+=sz}}}
+  // jarak ke tepi (chamfer 2 lintasan)
+  const dt=new Float32Array(N);for(let i=0;i<N;i++)dt[i]=mask[i]?1e4:0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;if(!mask[i])continue;let v=dt[i];if(x===0||y===0)v=1;else v=Math.min(v,dt[i-1]+1,dt[i-W]+1,dt[i-W-1]+1.41,(x<W-1?dt[i-W+1]+1.41:1e4));dt[i]=v}
+  let Rm=1;for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){const i=y*W+x;if(!mask[i])continue;let v=dt[i];if(x===W-1||y===H-1)v=Math.min(v,1);else v=Math.min(v,dt[i+1]+1,dt[i+W]+1,dt[i+W+1]+1.41,(x>0?dt[i+W-1]+1.41:1e4));dt[i]=v;if(v>Rm)Rm=v}
+  const px=[],py=[];let sxx=0,syy=0,sxy=0,rust=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(mask[y*W+x]){const a=x-mx,b=y-my;px.push(a);py.push(b);sxx+=a*a;syy+=b*b;sxy+=a*b;
+    const k=(y*W+x)*4,[hh,ss,vv]=rgb2hsv(d[k],d[k+1],d[k+2]);if(hh>=6&&hh<=40&&ss>.38&&vv>.18)rust++}
+  const ang=.5*Math.atan2(2*sxy,sxx-syy),ca=Math.cos(ang),sa=Math.sin(ang);let lo=1e9,hi=-1e9;
+  for(let i=0;i<px.length;i++){const u=px[i]*ca+py[i]*sa;if(u<lo)lo=u;if(u>hi)hi=u}
+  return _seg[src]={ok:true,W,H,mask,dt,Rm,rgb:d,cx:mx,cy:my,px:Float32Array.from(px),py:Float32Array.from(py),Lm:Math.max(4,hi-lo),area,rust:rust/px.length}}
+
+/* ---------- voxel referensi ---------- */
+const _rv={};
+function refVox(p){
+  const key=p.kind+'|'+p.L+'|'+p.W+'|'+p.H;if(_rv[key])return _rv[key];
+  const specs=specsFor(p.kind),arrs=[];const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+  specs.forEach(s=>{const g=s.g.index?s.g.toNonIndexed():s.g;const a=g.attributes.position.array;for(let i=0;i<a.length;i+=3)for(let k=0;k<3;k++){if(a[i+k]<mn[k])mn[k]=a[i+k];if(a[i+k]>mx[k])mx[k]=a[i+k]}arrs.push(a)});
+  const sz=[0,1,2].map(k=>(mx[k]-mn[k])||1e-3),rank=[0,1,2].sort((a,b)=>sz[b]-sz[a]);
+  const dims=[p.L,p.W,p.H].map(v=>Number(v)||1).sort((a,b)=>b-a),sc=[1,1,1];rank.forEach((ax,r)=>sc[ax]=dims[r]/sz[ax]);
+  const vs=dims[0]/44,ctr=[0,1,2].map(k=>(mn[k]+mx[k])/2),nn=[0,1,2].map(k=>Math.ceil(sz[k]*sc[k]/vs)+5),[NX,NY,NZ]=nn;
+  const ix=(i,j,k)=>(k*NY+j)*NX+i,surf=new Uint8Array(NX*NY*NZ),P=[[0,0,0],[0,0,0],[0,0,0]];
+  const to=(a,k)=>(a-ctr[k])*sc[k]/vs+nn[k]/2;
+  arrs.forEach(a=>{for(let i=0;i<a.length;i+=9){for(let v=0;v<3;v++)for(let k=0;k<3;k++)P[v][k]=to(a[i+v*3+k],k);
+    const dd=(A,B)=>Math.hypot(A[0]-B[0],A[1]-B[1],A[2]-B[2]),e=Math.max(dd(P[0],P[1]),dd(P[1],P[2]),dd(P[2],P[0])),n=Math.max(1,Math.ceil(e/.45));
+    for(let u=0;u<=n;u++)for(let w=0;w<=n-u;w++){const s=u/n,t=w/n,r=1-s-t;const x=P[0][0]*r+P[1][0]*s+P[2][0]*t,y=P[0][1]*r+P[1][1]*s+P[2][1]*t,z=P[0][2]*r+P[1][2]*s+P[2][2]*t;
+      const xi=x|0,yi=y|0,zi=z|0;if(xi>=0&&yi>=0&&zi>=0&&xi<NX&&yi<NY&&zi<NZ)surf[ix(xi,yi,zi)]=1}}});
+  // isi bagian dalam: banjiri dari luar
+  const out=new Uint8Array(NX*NY*NZ),stk=[0];out[0]=1;const nb=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  while(stk.length){const q=stk.pop(),i=q%NX,j=((q/NX)|0)%NY,k=(q/(NX*NY))|0;for(const [a,b,c] of nb){const x=i+a,y=j+b,z=k+c;if(x<0||y<0||z<0||x>=NX||y>=NY||z>=NZ)continue;const n=ix(x,y,z);if(!out[n]&&!surf[n]){out[n]=1;stk.push(n)}}}
+  let ns=0,ni=0;const solid=new Uint8Array(NX*NY*NZ);for(let i=0;i<solid.length;i++){if(surf[i])ns++;else if(!out[i]){solid[i]=1;ni++}}
+  for(let i=0;i<solid.length;i++)if(surf[i])solid[i]=1;
+  if(ni<ns*.4){const s2=solid.slice();for(let k=1;k<NZ-1;k++)for(let j=1;j<NY-1;j++)for(let i=1;i<NX-1;i++)if(surf[ix(i,j,k)])for(const [a,b,c] of nb)s2[ix(i+a,j+b,k+c)]=1;solid.set(s2)}
+  const pts=[],sidx=[];let cx=0,cy=0,cz=0;
+  for(let k=0;k<NZ;k++)for(let j=0;j<NY;j++)for(let i=0;i<NX;i++)if(solid[ix(i,j,k)]){pts.push(i+.5-NX/2,j+.5-NY/2,k+.5-NZ/2);cx+=pts[pts.length-3];cy+=pts[pts.length-2];cz+=pts[pts.length-1]}
+  const n=pts.length/3;cx/=n;cy/=n;cz/=n;const P3=new Float32Array(n*3);let maxR=0;
+  for(let i=0;i<n;i++){P3[i*3]=(pts[i*3]-cx)*vs;P3[i*3+1]=(pts[i*3+1]-cy)*vs;P3[i*3+2]=(pts[i*3+2]-cz)*vs;maxR=Math.max(maxR,Math.hypot(P3[i*3],P3[i*3+1],P3[i*3+2]))}
+  // voxel permukaan = voxel padat dengan tetangga kosong
+  let q=0;for(let k=0;k<NZ;k++)for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){if(!solid[ix(i,j,k)])continue;let edge=false;for(const [a,b,c] of nb){const x=i+a,y=j+b,z=k+c;if(x<0||y<0||z<0||x>=NX||y>=NY||z>=NZ||!solid[ix(x,y,z)]){edge=true;break}}if(edge)sidx.push(q);q++}
+  const R={pts:P3,n,surf:Uint32Array.from(sidx),vs,maxR,Dm:2*maxR+vs,dims,sil:[]};
+  R.pxmm=.82*64/R.Dm;R.sil=_vdirs.map((v,k)=>silOf(R,k,64,R.pxmm));
+  return _rv[key]=R}
+function silOf(R,k,S,pxmm){
+  const [u1,u2]=_basis[k],m=new Uint8Array(S*S),h=S/2,n=R.n,p=R.pts;let area=0;const A=new Float32Array(n),B=new Float32Array(n);let sxx=0,syy=0,sxy=0;
+  for(let i=0;i<n;i++){const a=p[i*3]*u1.x+p[i*3+1]*u1.y+p[i*3+2]*u1.z,b=p[i*3]*u2.x+p[i*3+1]*u2.y+p[i*3+2]*u2.z;A[i]=a;B[i]=b;sxx+=a*a;syy+=b*b;sxy+=a*b;
+    const X=(h+a*pxmm)|0,Y=(h-b*pxmm)|0;if(X<0||Y<0||X>=S-1||Y>=S-1)continue;m[Y*S+X]=1;m[Y*S+X+1]=1;m[(Y+1)*S+X]=1;m[(Y+1)*S+X+1]=1}
+  for(let i=0;i<S*S;i++)area+=m[i];
+  const ang=.5*Math.atan2(2*sxy,sxx-syy),ca=Math.cos(ang),sa=Math.sin(ang);let lo=1e9,hi=-1e9;for(let i=0;i<n;i++){const u=A[i]*ca+B[i]*sa;if(u<lo)lo=u;if(u>hi)hi=u}
+  return {m,area,L:(hi-lo)*pxmm,A,B}}
+
+/* ---------- raster & IoU ---------- */
+function rasM(sg,f,th,S,sx,sy,out,step){out.fill(0);const c=Math.cos(th),s=Math.sin(th),h=S/2,px=sg.px,py=sg.py;
+  for(let i=0;i<px.length;i+=step){const X=(px[i]*c-py[i]*s)*f+h+sx,Y=(px[i]*s+py[i]*c)*f+h+sy;if(X<0||Y<0)continue;const xi=X|0,yi=Y|0;if(xi>=S-1||yi>=S-1)continue;out[yi*S+xi]=1;out[yi*S+xi+1]=1;out[(yi+1)*S+xi]=1;out[(yi+1)*S+xi+1]=1}}
+function iouOf(a,b){let i=0,u=0;for(let k=0;k<a.length;k++){const x=a[k],y=b[k];if(x&&y)i++;if(x||y)u++}return u?i/u:0}
+function dil1(m,S){const o=m.slice();for(let y=1;y<S-1;y++)for(let x=1;x<S-1;x++){const i=y*S+x;if(!m[i]&&(m[i-1]||m[i+1]||m[i-S]||m[i+S]))o[i]=1}return o}
+
+/* ---------- cocokkan satu foto ---------- */
+function matchOne(R,sg,size,us){
+  const S=64,buf=new Uint8Array(S*S),cand=[],TH=Math.PI/9;
+  const fOf=k=>(size?size*R.pxmm/sg.Lm:R.sil[k].L/sg.Lm)*us;
+  for(let k=0;k<_vdirs.length;k++){const f=fOf(k);for(let t=0;t<18;t++){rasM(sg,f,t*TH,S,0,0,buf,2);cand.push({k,th:t*TH,f,sx:0,sy:0,iou:iouOf(buf,R.sil[k].m)})}}
+  cand.sort((a,b)=>b.iou-a.iou);let best=null;
+  for(const c0 of cand.slice(0,6)){for(const dth of [-10,-5,0,5,10]){const th=c0.th+dth*Math.PI/180;
+    for(let sy=-2;sy<=2;sy++)for(let sx=-2;sx<=2;sx++){rasM(sg,c0.f,th,S,sx,sy,buf,2);const iou=iouOf(buf,R.sil[c0.k].m);if(!best||iou>best.iou)best={k:c0.k,th,f:c0.f,sx,sy,iou}}}}
+  // hasil akhir pada 128 px
+  const S2=128,pm=R.pxmm*2,sil=silOf(R,best.k,S2,pm),b2=new Uint8Array(S2*S2);let fin=null;
+  for(let sy=-2;sy<=2;sy++)for(let sx=-2;sx<=2;sx++){const X=best.sx*2+sx,Y=best.sy*2+sy;rasM(sg,best.f*2,best.th,S2,X,Y,b2,1);const iou=iouOf(b2,sil.m);if(!fin||iou>fin.iou)fin={iou,sx:X,sy:Y}}
+  return {k:best.k,th:best.th,f2:best.f*2,sx:fin.sx,sy:fin.sy,iou:fin.iou,S2,pm,sil}}
+function evalPose(R,sg,m){
+  const S=m.S2,b=new Uint8Array(S*S);rasM(sg,m.f2,m.th,S,m.sx,m.sy,b,1);
+  const bd=dil1(b,S),sd=dil1(m.sil.m,S);let inter=0,sA=m.sil.area,exc=0,mA=0;
+  for(let i=0;i<S*S;i++){if(m.sil.m[i]&&!bd[i])mA++;if(b[i]&&!sd[i])exc++;if(b[i]&&m.sil.m[i])inter++}
+  const h=S/2,miss=new Uint8Array(R.n);let mc=0;
+  for(let i=0;i<R.n;i++){const X=Math.round(h+m.sil.A[i]*m.pm),Y=Math.round(h-m.sil.B[i]*m.pm);const ok=X>=0&&Y>=0&&X<S&&Y<S&&bd[Y*S+X];if(!ok){miss[i]=1;mc++}}
+  // zona sepanjang sumbu terpanjang referensi
+  const rg=[0,1,2].map(k=>{let lo=1e9,hi=-1e9;for(let i=0;i<R.n;i++){const v=R.pts[i*3+k];if(v<lo)lo=v;if(v>hi)hi=v}return [lo,hi]}),ax=[0,1,2].sort((a,b)=>(rg[b][1]-rg[b][0])-(rg[a][1]-rg[a][0]))[0];
+  const zt=[0,0,0],zm=[0,0,0];for(let i=0;i<R.n;i++){const z=Math.min(2,Math.floor((R.pts[i*3+ax]-rg[ax][0])/((rg[ax][1]-rg[ax][0])||1)*3));zt[z]++;if(miss[i])zm[z]++}
+  const missV=mc/R.n,excess=exc/sA;
+  return {miss,missV,missA:mA/sA,excess,iou:m.iou,zones:zt.map((t,i)=>t?zm[i]/t:0),axis:ax,total:Math.min(1,missV+.5*excess),M:b,mask:bd}}
+
+/* ---------- model 3D temuan dari siluet (relief) ---------- */
+function buildFinding(R,sg,m,ev){
+  const k=m.k,[u1,u2]=_basis[k],v=_vdirs[k],vs=R.vs,pm=m.pm,S=m.S2,h=S/2,half=Math.ceil(R.maxR/vs)+2,G=2*half+1;
+  const cs=Math.cos(m.th),sn=Math.sin(m.th),inM=new Uint8Array(G*G),hn=new Int16Array(G*G),pix=new Int32Array(G*G);
+  const k2mm=m.f2/pm/2; // piksel foto -> mm (f2 sudah untuk 128 px, pm juga)
+  const mmPer=1/ (m.f2/pm);
+  for(let j=0;j<G;j++)for(let i=0;i<G;i++){const A=(i-half)*vs,B=(j-half)*vs,dxr=(A*pm-m.sx)/m.f2,dyr=(-B*pm-m.sy)/m.f2,dx=dxr*cs+dyr*sn,dy=-dxr*sn+dyr*cs;
+    const x=Math.round(sg.cx+dx),y=Math.round(sg.cy+dy);if(x<0||y<0||x>=sg.W||y>=sg.H)continue;const q=y*sg.W+x;if(!sg.mask[q])continue;
+    inM[j*G+i]=1;pix[j*G+i]=q;const d=Math.min(sg.dt[q],sg.Rm),r=sg.Rm,ht=r*Math.sqrt(Math.max(0,1-(1-d/r)*(1-d/r)));hn[j*G+i]=Math.round(ht*(m.f2/pm)/vs)}
+  const sd=dil1(m.sil.m,S),pos=[],col=[],exc=[],c=new T.Color();let ne=0;
+  const push=(A,B,z,rgb,f,isExc)=>{pos.push(A*u1.x+B*u2.x+z*v.x,A*u1.y+B*u2.y+z*v.y,A*u1.z+B*u2.z+z*v.z);col.push(rgb[0]*f,rgb[1]*f,rgb[2]*f);exc.push(isExc?1:0)};
+  for(let j=0;j<G;j++)for(let i=0;i<G;i++){const o=j*G+i;if(!inM[o])continue;const A=(i-half)*vs,B=(j-half)*vs,n=hn[o],q=pix[o]*4,rgb=[sg.rgb[q]/255,sg.rgb[q+1]/255,sg.rgb[q+2]/255];
+    const X=Math.round(h+A*pm),Y=Math.round(h-B*pm),isE=!(X>=0&&Y>=0&&X<S&&Y<S&&sd[Y*S+X]);if(isE)ne++;
+    const bnd=!inM[o-1]||!inM[o+1]||!inM[o-G]||!inM[o+G];
+    if(n===0){push(A,B,0,rgb,.9,isE);continue}
+    push(A,B,n*vs,rgb,1,isE);push(A,B,-n*vs,rgb,.5,isE);
+    if(bnd)for(let z=-n+1;z<n;z++)push(A,B,z*vs,rgb,.72,isE)}
+  // referensi: voxel permukaan + status hilang
+  const rp=new Float32Array(R.surf.length*3),rm=new Uint8Array(R.surf.length);
+  R.surf.forEach((q,i)=>{rp[i*3]=R.pts[q*3];rp[i*3+1]=R.pts[q*3+1];rp[i*3+2]=R.pts[q*3+2];rm[i]=ev.miss[q]});
+  return {pos:Float32Array.from(pos),col:Float32Array.from(col),exc:Uint8Array.from(exc),n:pos.length/3,rpos:rp,rmiss:rm,vs,basis:[u1.clone(),u2.clone(),v.clone()]}}
+
+/* ---------- gabungan: banyak foto -> satu hasil ---------- */
+function matchPart(p,segs,ctx,us){
+  us=us||1;const R=refVox(p),per=[];
+  segs.forEach((sg,i)=>{const m=matchOne(R,sg,ctx.size||0,us),ev=evalPose(R,sg,m);per.push({i,sg,m,ev})});
+  per.sort((a,b)=>b.m.iou-a.m.iou);const prim=per[0],ok=per.filter(x=>x.m.iou>=.3),use=ok.length?ok:[prim];
+  const wsum=use.reduce((a,x)=>a+x.m.iou,0),avg=f=>use.reduce((a,x)=>a+f(x)*x.m.iou,0)/wsum;
+  const model=buildFinding(R,prim.sg,prim.m,prim.ev);
+  return {ok:true,R,p,per:per.map(x=>({i:x.i,iou:x.m.iou,missV:x.ev.missV,excess:x.ev.excess,total:x.ev.total})),
+    iou:per.reduce((a,x)=>a+x.m.iou,0)/per.length,best:prim.m.iou,
+    missV:avg(x=>x.ev.missV),excess:avg(x=>x.ev.excess),total:avg(x=>x.ev.total),zones:[0,1,2].map(z=>avg(x=>x.ev.zones[z])),axis:prim.ev.axis,
+    rust:prim.sg.rust,model,us,usedSize:!!ctx.size,valid:ok.length>0&&prim.m.iou>=.5}}
+
+/* cocokkan bentuk 3D untuk kandidat teratas (tidak mengubah skor) */
+async function matchRerank(rows,photos,ctx,prog){
+  const segs=[];for(const ph of photos){try{const s=await segPhoto(ph.src);if(s.ok)segs.push(s)}catch(e){}}
+  if(!segs.length)return null;
+  const K=Math.min(12,rows.length);
+  for(let i=0;i<K;i++){prog&&prog(i,K);await new Promise(r=>setTimeout(r,0));try{rows[i].m=matchPart(rows[i].p,segs,ctx,1)}catch(e){console.error(e);rows[i].m=null}}
+  const ious=rows.slice(0,K).filter(r=>r.m).map(r=>r.m.iou),floor=ious.length?Math.min(...ious)*.9:0;
+  rows.forEach(r=>{r.shape=r.m?r.m.iou:floor}); // hanya informasi: uji pada data berlabel menunjukkan IoU siluet tidak boleh mengubah peringkat
+  return segs}
+function rematch(r,segs,ctx,us){r.m=matchPart(r.p,segs,ctx,us);return r.m}
+
+/* ---------- Viewer: model temuan, hantu referensi, bagian hilang ---------- */
+Viewer.prototype.setMatch=function(m){
+  this.clear();const mod=m.model,vs=mod.vs,root=new T.Group(),inner=new T.Group(),fG=new T.Group();root.add(inner);inner.add(fG);
+  const B=mod.basis,rot=new T.Matrix4().set(B[0].x,B[0].y,B[0].z,0,B[1].x,B[1].y,B[1].z,0,B[2].x,B[2].y,B[2].z,0,0,0,1);
+  inner.quaternion.setFromRotationMatrix(rot);
+  const box=geom=>new T.BoxGeometry(vs*.98,vs*.98,vs*.98);
+  const fm=new T.MeshStandardMaterial({metalness:.25,roughness:.62,clippingPlanes:[this.pSolid]});
+  const fMesh=new T.InstancedMesh(box(),fm,mod.n),mt=new T.Matrix4(),cc=new T.Color();
+  for(let i=0;i<mod.n;i++){mt.makeTranslation(mod.pos[i*3],mod.pos[i*3+1],mod.pos[i*3+2]);fMesh.setMatrixAt(i,mt);cc.setRGB(mod.col[i*3],mod.col[i*3+1],mod.col[i*3+2]);fMesh.setColorAt(i,cc)}
+  fMesh.instanceColor.needsUpdate=true;fMesh.frustumCulled=false;fG.add(fMesh);
+  const pg=new T.BufferGeometry();pg.setAttribute('position',new T.BufferAttribute(mod.pos,3));
+  const pts=new T.Points(pg,new T.PointsMaterial({color:0x9ff3ff,size:vs*.55,sizeAttenuation:true,clippingPlanes:[this.pWire],transparent:true,opacity:.9}));pts.frustumCulled=false;fG.add(pts);
+  let ne=0;for(let i=0;i<mod.n;i++)ne+=mod.exc[i];
+  const eMesh=new T.InstancedMesh(box(),new T.MeshBasicMaterial({color:0xffb000,transparent:true,opacity:.9}),Math.max(1,ne));let ei=0;
+  for(let i=0;i<mod.n;i++)if(mod.exc[i]){mt.makeTranslation(mod.pos[i*3],mod.pos[i*3+1],mod.pos[i*3+2]);eMesh.setMatrixAt(ei++,mt)}eMesh.count=ne;eMesh.frustumCulled=false;eMesh.visible=false;fG.add(eMesh);
+  const nr=mod.rmiss.length;let nm=0;for(let i=0;i<nr;i++)nm+=mod.rmiss[i];
+  const gMesh=new T.InstancedMesh(box(),new T.MeshBasicMaterial({color:0xffb000,transparent:true,opacity:.2,depthWrite:false}),Math.max(1,nr-nm));
+  const mMesh=new T.InstancedMesh(box(),new T.MeshBasicMaterial({color:0xe5484d,transparent:true,opacity:.85}),Math.max(1,nm));let gi=0,mi=0;
+  for(let i=0;i<nr;i++){mt.makeTranslation(mod.rpos[i*3],mod.rpos[i*3+1],mod.rpos[i*3+2]);if(mod.rmiss[i])mMesh.setMatrixAt(mi++,mt);else gMesh.setMatrixAt(gi++,mt)}
+  gMesh.count=gi;mMesh.count=mi;gMesh.frustumCulled=mMesh.frustumCulled=false;
+  const ghost=new T.Group();ghost.add(gMesh);ghost.visible=this.ref;inner.add(ghost);mMesh.visible=false;inner.add(mMesh);
+  this.scene.add(root);this.cur=root;this.fG=fG;this.fMat=fm;this.eMesh=eMesh;this.mMesh=mMesh;this.refGrp=ghost;this.matchOn=true;this.fitT0=null;
+  // posisi & skala: pusatkan pada bounding box terputar
+  const lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9],acc=(a,n)=>{for(let i=0;i<n;i++){for(let k=0;k<3;k++){const v=a[i*3]*B[k].x+a[i*3+1]*B[k].y+a[i*3+2]*B[k].z;if(v<lo[k])lo[k]=v;if(v>hi[k])hi[k]=v}}};
+  acc(mod.pos,mod.n);acc(mod.rpos,nr);const c=[0,1,2].map(k=>(lo[k]+hi[k])/2),sz=[0,1,2].map(k=>hi[k]-lo[k]),s=1.9/Math.max(sz[0],sz[1],sz[2]);
+  inner.position.set(-c[0],-c[1],-c[2]);root.scale.setScalar(s);root.position.y=sz[1]*s/2+.02;
+  this.bot=.02;this.top=sz[1]*s+.02;this.floor.position.y=.01;this.grid.position.y=.01;this.dist=7.2;this.th=0;this.ph=1.42;
+  this.fOff=new T.Vector3(sz[0]*.9,sz[1]*.15,sz[2]*.4);this.fRot=new T.Vector3(.5,.9,.4);
+  // arah offset pada kerangka kanonik: sumbu layar -> kanonik
+  this.fOffC=new T.Vector3().addScaledVector(B[0],this.fOff.x).addScaledVector(B[1],this.fOff.y).addScaledVector(B[2],this.fOff.z);
+  this.fAxis=B[1].clone();};
+Viewer.prototype.setDmg=function(on){if(!this.matchOn)return;this.mMesh.visible=on;this.eMesh.visible=on;this.fMat.transparent=on;this.fMat.opacity=on?.5:1;this.fMat.depthWrite=!on;this.fMat.needsUpdate=true};
+Viewer.prototype.stepMatch=function(now){if(!this.matchOn||!this.fG)return;
+  if(this.fitT0!=null){const u=Math.min(1,(now-this.fitT0)/2600),e=1-Math.pow(1-u,3);this.fG.position.copy(this.fOffC).multiplyScalar(1-e);this.fG.quaternion.setFromAxisAngle(this.fAxis,this.fRot.y*(1-e));if(u>=1)this.fitT0=null}};
+const _L0=Viewer.prototype.loop;Viewer.prototype.loop=function(now){this.stepMatch(now);return _L0.call(this,now)};
+const _SM0=Viewer.prototype.setMode;Viewer.prototype.setMode=function(m,o){
+  _SM0.call(this,m,o);if(!this.matchOn||!this.fG)return;const rest=()=>{this.fitT0=null;this.fG.position.set(0,0,0);this.fG.quaternion.identity()};
+  if(m==='fit'){this.setDmg(false);this.setRef(true);this.fG.position.copy(this.fOffC);this.fitT0=performance.now();this.onRef&&this.onRef(true)}
+  else if(m==='dmg'){rest();this.setRef(false);this.setDmg(true);this.onRef&&this.onRef(false)}
+  else{rest();this.setDmg(false)}};
+const _CL0=Viewer.prototype.clear;Viewer.prototype.clear=function(){_CL0.call(this);this.matchOn=false;this.fG=null};
+Viewer.prototype.stepMatch=Viewer.prototype.stepMatch;
+
+/* ---------- panel kerusakan ---------- */
+function dmgCat(t){return t<.08?['Utuh / aus sangat ringan','ok']:t<.25?['Aus ringan','ok']:t<.45?['Aus sedang','warn']:t<.7?['Rusak berat','bad']:['Patah / sebagian besar hilang','bad']}
+function renderDamage(r){
+  const box=$('dmgp'),m=r&&r.m;if(!m||!m.ok){box.hidden=true;return}
+  const pc=x=>Math.round(x*100),[cat,cc]=dmgCat(m.total),zn=['Ujung 1','Tengah','Ujung 2'];
+  const bar=(v,col)=>`<div class="meter"><i style="width:${Math.max(2,pc(v))}%;background:${col}"></i></div>`;
+  box.hidden=false;
+  box.innerHTML=`<div class="dmg-h"><div><span class="dmg-big">${pc(m.total)}%</span><small>Perkiraan tingkat kerusakan terhadap part utuh</small></div><span class="chip ${cc}">${cat}</span></div>
+  <div class="meter big"><i style="width:${Math.max(2,pc(m.total))}%;background:var(--${cc==='ok'?'ok':cc==='warn'?'warn':'bad'})"></i></div>
+  <dl class="dmg-g"><div><dt>Material hilang</dt><dd>${pc(m.missV)}%</dd></div><div><dt>Tonjolan / deformasi</dt><dd>${pc(m.excess)}%</dd></div><div><dt>Kecocokan siluet</dt><dd>${pc(m.best)}%</dd></div><div><dt>Indikator karat</dt><dd>${pc(m.rust)}%</dd></div></dl>
+  <div class="dmg-z"><b>Kehilangan material per zona</b>${m.zones.map((z,i)=>`<div class="zr"><span>${zn[i]}</span>${bar(z,'var(--bad)')}<em>${pc(z)}%</em></div>`).join('')}</div>
+  ${m.per.length>1?`<div class="hint">Per foto: ${m.per.map(x=>`foto ${x.i+1} (cocok ${pc(x.iou)}%, kerusakan ${pc(x.total)}%)`).join('; ')}.</div>`:''}
+  ${m.valid?'':'<div class="hint" style="color:var(--warn)">Kecocokan siluet rendah, angka kerusakan kurang bisa diandalkan. Tandai benda lebih rapat atau tambah foto dari sudut lain.</div>'}
+  <label class="dmg-s">Skala temuan terhadap part utuh <b id="sclv">${Math.round((m.us||1)*100)}%</b><input type="range" id="scl" min="40" max="130" step="5" value="${Math.round((m.us||1)*100)}" ${m.usedSize?'disabled':''}></label>
+  <div class="hint">${m.usedSize?'Skala memakai Ukuran (mm) yang Anda isi.':'Ukuran belum diisi: temuan dianggap sama panjang dengan part utuh, sehingga serpihan terlihat lebih utuh dari aslinya. Isi Ukuran (mm) atau geser skala.'} Bentuk 3D temuan dibangun dari siluet foto dengan kedalaman perkiraan; angka kerusakan berasal dari siluet, bukan pemindaian.</div>`}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='scl')$('sclv').textContent=e.target.value+'%'});
+document.addEventListener('change',e=>{if(!e.target||e.target.id!=='scl'||!result||!result.segs)return;const r=result.rows[sel],us=+e.target.value/100;
+  try{rematch(r,result.segs,ctxNow(),us);r.us=us;showSelected(true)}catch(err){console.error(err)}});
 /* Bahasa: satu tombol ID <-> EN. Menerjemahkan seluruh teks tampilan (termasuk yang dibuat dinamis) tanpa mengubah kode lain. */
 (function(){
 const D={
@@ -1228,7 +1479,25 @@ const lc=s=>s.toLowerCase();
 const wk=Object.keys(W).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
 const WR=new RegExp('(?<![A-Za-z0-9])('+wk.join('|')+')(?![A-Za-z0-9])','gi');
 const cap=(src,out)=>src[0]===src[0].toUpperCase()&&src[0]!==src[0].toLowerCase()?out[0].toUpperCase()+out.slice(1):out;
+Object.assign(D,{
+'cocokkan':'Match','kerusakan':'Damage','mode: pencocokan overlay':'MODE: OVERLAY MATCHING','mode: analisis kerusakan':'MODE: DAMAGE ANALYSIS',
+'perkiraan tingkat kerusakan terhadap part utuh':'Estimated damage level compared with the intact part','material hilang':'Missing material','tonjolan / deformasi':'Bulge / deformation',
+'kecocokan siluet':'Silhouette match','indikator karat':'Rust indicator','kehilangan material per zona':'Missing material by zone','ujung 1':'End 1','tengah':'Middle','ujung 2':'End 2',
+'skala temuan terhadap part utuh':'Finding scale relative to the intact part','utuh / aus sangat ringan':'Intact / very light wear','aus ringan':'Light wear','aus sedang':'Moderate wear','rusak berat':'Heavily damaged','patah / sebagian besar hilang':'Broken / mostly missing',
+'mencocokkan bentuk 3d':'Matching 3D shape',
+'kecocokan siluet rendah, angka kerusakan kurang bisa diandalkan. tandai benda lebih rapat atau tambah foto dari sudut lain.':'Low silhouette match, so the damage figure is less reliable. Mark the object more tightly or add a photo from another angle.',
+'ukuran belum diisi: temuan dianggap sama panjang dengan part utuh, sehingga serpihan terlihat lebih utuh dari aslinya. isi ukuran (mm) atau geser skala. bentuk 3d temuan dibangun dari siluet foto dengan kedalaman perkiraan; angka kerusakan berasal dari siluet, bukan pemindaian.':'Size not entered: the finding is assumed to be as long as the intact part, so fragments look more intact than they really are. Enter Size (mm) or move the scale. The 3D shape is built from the photo silhouette with an estimated depth; the damage figure comes from the silhouette, not from a scan.',
+'skala memakai ukuran (mm) yang anda isi. bentuk 3d temuan dibangun dari siluet foto dengan kedalaman perkiraan; angka kerusakan berasal dari siluet, bukan pemindaian.':'The scale uses the Size (mm) you entered. The 3D shape is built from the photo silhouette with an estimated depth; the damage figure comes from the silhouette, not from a scan.',
+'siluet benda tidak terdeteksi, mode ini butuh model dari foto':'Object silhouette not detected; this mode needs a model built from the photo'
+});
+Object.assign(D,{'kata sandi paket (jika paket dikunci)':'Package password (if the package is locked)','kosongkan bila paket tidak dikunci':'Leave empty if the package is not locked','contamination tracker · data center':'Contamination Tracker · Data Center','versi data':'Data version','bawaan':'Built-in','terupdate':'Updated','data historis':'Historical data','database unit':'Unit database','model 3d':'3D models','foto dokumentasi':'Documentation photos','kasus dan inspeksi':'Cases and inspections',
+'import data package':'Import Data Package','kembali ke data bawaan':'Back to built-in data','data center':'Data Center',
+'data contoh yang tertanam di aplikasi. impor paket dari web app untuk memakai data lengkap.':'Sample data embedded in the app. Import a package from the web app to use the full data.',
+'buat paket di web app: katalog > ekspor > siapkan paket data, lalu kirim file .ctpack ke hp (whatsapp, kabel, atau flashdisk). data lokal yang anda tambah di aplikasi ini tetap dipertahankan. pembaruan lewat paket tidak butuh pembaruan aplikasi.':'Create the package in the web app: Catalog > Export > Prepare data package, then send the .ctpack file to the phone (WhatsApp, cable or flash drive). Local data you add in this app is kept. Updating through a package needs no app update.',
+'sudah memakai data bawaan':'Already using built-in data','membaca paket…':'Reading package…','menyimpan ke perangkat…':'Saving to this device…'});
 const R=[
+[/^(\d[\d.]*) catatan$/,'$1 records'],[/^(\d[\d.]*) unit · (\d[\d.]*) part$/,'$1 units · $2 parts'],[/^(\d[\d.]*) model$/,'$1 models'],[/^(\d[\d.]*) foto$/,'$1 photos'],[/^(\d[\d.]*) kasus · (\d[\d.]*) inspeksi$/,'$1 cases · $2 inspections'],[/^Dibuat (.+?) · integritas file terverifikasi$/,'Created $1 · file integrity verified'],[/^Memeriksa file (\d+) dari (\d+)…$/,'Checking file $1 of $2…'],[/^Gagal impor: (.+)$/,'Import failed: $1'],[/^Berhasil: versi (.+)\. Memuat ulang…$/,'Done: version $1. Reloading…'],
+[/^Per foto: (.+)\.$/i,(m,a)=>'Per photo: '+a.replace(/foto (\d+) \(cocok (\d+)%, kerusakan (\d+)%\)/g,'photo $1 (match $2%, damage $3%)')+'.'],[/^Kandidat (\d+) dari (\d+)$/i,'Candidate $1 of $2'],[/^(.*) · KERUSAKAN (\d+)%$/i,'$1 · DAMAGE $2%'],
 [/^Model 3D milik Anda untuk (.+)$/i,'Your own 3D model for $1'],[/^Memuat model 3D (.+) dari repo…$/i,'Loading 3D model $1 from the repo…'],[/^Model repo gagal dimuat: (.+)$/i,'Repo model failed to load: $1'],
 [/^(\d+) foto\. Ambil sudut lain atau tekan Lacak sumber\.$/i,'$1 photo(s). Take another angle or press Trace source.'],[/^(\d+) foto ditambahkan sebagai referensi.*$/i,'$1 photo(s) added as references'],
 [/^Part ditambahkan ke (.+)$/i,'Part added to $1'],[/^Inspeksi (\d+) dicatat$/i,'Inspection $1 recorded'],[/^Kasus dicatat: (.+)$/i,'Case recorded: $1'],
