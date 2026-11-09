@@ -7,11 +7,14 @@ Nothing here runs unless ``SUPABASE_URL`` and ``SUPABASE_SERVICE_KEY`` are set.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import mimetypes
 import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 # table -> primary key columns. ``attempts`` (login lockout) stays local on purpose.
@@ -27,6 +30,7 @@ TABLES: dict[str, list[str]] = {
     "users": ["username"],
     "audit": ["id"],
 }
+EXTRA_PK = {"meta": ["key"], "field_submissions": ["id"]}
 BUCKET = "ct-files"
 BATCH = 400
 PAGE = 1000
@@ -76,8 +80,12 @@ def _json(rows) -> bytes:
     return json.dumps(rows, ensure_ascii=False).encode()
 
 
+def pk(table: str) -> list[str]:
+    return TABLES.get(table) or EXTRA_PK[table]
+
+
 def upsert(table: str, rows: list[dict]) -> None:
-    on = ",".join(TABLES[table])
+    on = ",".join(pk(table))
     for i in range(0, len(rows), BATCH):
         _req("POST", f"/rest/v1/{table}?on_conflict={on}", _json(rows[i:i + BATCH]),
              {"Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal"})
@@ -96,6 +104,50 @@ def fetch(table: str) -> list[dict]:
         out += page
         if len(page) < PAGE:
             return out
+
+
+def get_json(path: str):
+    return json.loads(_req("GET", path)[1] or b"[]")
+
+
+def patch(table: str, match: dict, fields: dict) -> None:
+    q = "&".join(f"{k}=eq.{urllib.parse.quote(str(v), safe='')}" for k, v in match.items())
+    _req("PATCH", f"/rest/v1/{table}?{q}", _json(fields), {"Content-Type": "application/json", "Prefer": "return=minimal"})
+
+
+def set_meta(key: str, value: str) -> None:
+    upsert("meta", [{"key": key, "value": value}])
+
+
+def get_meta(key: str) -> str | None:
+    rows = get_json(f"/rest/v1/meta?key=eq.{urllib.parse.quote(key, safe='')}&select=value")
+    return rows[0]["value"] if rows else None
+
+
+def bump_version() -> str:
+    """New data version: the APK compares it with the one it holds to know an update exists."""
+    v = datetime.now(timezone.utc).strftime("%Y.%m.%d.%H%M%S")
+    set_meta("data_version", v)
+    return v
+
+
+def publish_static(force: bool = False) -> None:
+    """Catalog metadata and 3D model files for the APK (models are uploaded only when they changed)."""
+    from core import db, models
+
+    set_meta("catalog_meta", json.dumps(db.meta(), ensure_ascii=False, separators=(",", ":")))
+    man = models.manifest()
+    set_meta("models", json.dumps(man, ensure_ascii=False, separators=(",", ":")))
+    sig = hashlib.sha256(json.dumps(
+        [(u, n, (models.MODELS / u / n).stat().st_size) for u, c in man.items() for n in c.get("files", [])
+         if (models.MODELS / u / n).exists()]).encode()).hexdigest()[:16]
+    if force or get_meta("models_sig") != sig:
+        for u, c in man.items():
+            for n in c.get("files", []):
+                f = models.MODELS / u / n
+                if f.exists():
+                    upload_file(f"models/{u}/{n}", f.read_bytes(), mimetypes.guess_type(n)[0] or "application/octet-stream")
+        set_meta("models_sig", sig)
 
 
 def remote_has_data() -> bool:
@@ -164,6 +216,7 @@ def flush(con, data_dir: Path) -> int:
                     upload_file(it["file"], f.read_bytes())
         upsert(tbl, items)
     con.execute("DELETE FROM _outbox WHERE id<=?", (rows[-1]["id"],))
+    bump_version()
     return len(last)
 
 

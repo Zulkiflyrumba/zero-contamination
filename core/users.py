@@ -26,6 +26,7 @@ PAGES = {  # page key -> roles allowed
     "tracker": ROLES,
     "parts3d": ROLES,
     "cases": ["admin", "operator"],
+    "approvals": ["admin"],
     "catalog": ["admin"],
     "users": ["admin"],
     "about": ROLES,

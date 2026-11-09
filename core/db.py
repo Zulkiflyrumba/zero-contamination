@@ -98,6 +98,11 @@ def _flush(con: sqlite3.Connection) -> None:
 
 def init_db(path: str | Path | None = None) -> None:
     """Create tables and seed the catalog on first run."""
+    _init_db(path)
+    _publish_static()
+
+
+def _init_db(path: str | Path | None = None) -> None:
     with connect(path) as con:
         con.executescript(SCHEMA + cloud.trigger_sql())
         if con.execute("SELECT COUNT(*) FROM units").fetchone()[0] == 0 and cloud.enabled() and _try_pull(con):
@@ -131,7 +136,17 @@ def cloud_pull(path=None) -> dict:
 
 def cloud_push_all(path=None) -> int:
     with connect(path) as con:
-        return cloud.push_all(con, DATA)
+        n = cloud.push_all(con, DATA)
+    cloud.publish_static(force=True)
+    return n
+
+
+def _publish_static() -> None:
+    if cloud.enabled():
+        try:
+            cloud.publish_static()
+        except (cloud.CloudError, OSError) as e:
+            LAST_SYNC_ERROR[0] = str(e)
 
 
 def _sync_new_parts(con: sqlite3.Connection) -> None:
