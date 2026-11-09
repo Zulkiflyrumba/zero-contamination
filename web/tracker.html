@@ -402,8 +402,18 @@ header.hero>.langbtn{right:30px;top:66px}
   </main>
 </section>
 <section id="v-data" hidden style="margin-top:16px;max-width:640px"><div class="card"><div class="ph"><span>Contamination Tracker · Data Center</span></div><div class="body" id="dcBox"></div>
-<div class="body" style="gap:10px"><label>Kata sandi paket (jika paket dikunci)<input type="password" id="dcPw" autocomplete="off" placeholder="Kosongkan bila paket tidak dikunci"></label><label class="btn pri" style="cursor:pointer;text-align:center">Import Data Package<input type="file" id="dcFile" accept=".ctpack,.zip,application/zip" hidden></label><button class="btn" id="dcReset">Kembali ke data bawaan</button><button class="btn" disabled title="Sinkronisasi langsung ke server akan menyusul">Check for Updates</button><div class="hint" id="dcSt" aria-live="polite"></div>
+<div class="body" style="gap:10px"><label>Kata sandi paket (jika paket dikunci)<input type="password" id="dcPw" autocomplete="off" placeholder="Kosongkan bila paket tidak dikunci"></label><label class="btn pri" style="cursor:pointer;text-align:center">Import Data Package<input type="file" id="dcFile" accept=".ctpack,.zip,application/zip" hidden></label><button class="btn" id="dcReset">Kembali ke data bawaan</button><div class="hint" id="dcSt" aria-live="polite"></div>
 <div class="hint">Buat paket di web app: Katalog &gt; Ekspor &gt; Siapkan paket data, lalu kirim file .ctpack ke HP (WhatsApp, kabel, atau flashdisk). Data lokal yang Anda tambah di aplikasi ini tetap dipertahankan. Pembaruan lewat paket tidak butuh pembaruan aplikasi.</div></div></div></section>
+<section id="clBox" hidden style="margin-top:16px;max-width:640px"><div class="card"><div class="ph"><span>Sinkronisasi cloud</span></div><div class="body" style="gap:10px">
+<div class="hint" id="clState"></div>
+<label>Alamat server<input id="clUrl" type="url" autocomplete="off" placeholder="https://xxxx.supabase.co"></label>
+<label>Kunci publishable<input id="clKey" type="text" autocomplete="off" placeholder="sb_publishable_…"></label>
+<label>Email akun<input id="clEmail" type="email" autocomplete="username"></label>
+<label id="clPwL">Password<input id="clPw" type="password" autocomplete="current-password"></label>
+<button class="btn pri" id="clLogin">Masuk</button><button class="btn" id="clLogout" hidden>Keluar dari cloud</button>
+<button class="btn" id="clCheck" disabled>Check for Updates</button><button class="btn pri" id="clPull" disabled>Tarik pembaruan dari server</button><button class="btn" id="clSend" disabled>Kirim antrean (0)</button>
+<div class="hint" id="clSt" aria-live="polite"></div>
+<div class="hint">Data yang Anda input di aplikasi (kasus, inspeksi, foto referensi, riwayat) masuk antrean Pending Sync dan dikirim saat online. Data baru dari lapangan baru masuk ke data utama setelah admin menyetujuinya di web. Memakai kunci publishable, bukan kunci secret.</div></div></div></section>
 <section id="v-kasus" hidden style="margin-top:16px"><div class="card"><div class="ph"><span>Riwayat kasus kontaminasi</span><small id="kCount"></small></div><div id="kList"></div></div></section>
 <p class="note">Prototipe. Foto referensi dan temuan di sini dibuat otomatis dari model 3D sederhana, kecuali foto kasus nyata HD785 #512. Kemiripan dihitung dari warna, bentuk siluet, rasio ukuran, dan konteks lokasi, jadi hasilnya berupa kandidat berperingkat untuk dikonfirmasi tim QC, bukan kepastian. Data tersimpan di browser ini, dan di basis data bersama bila tersedia.</p>
 </div>
@@ -871,7 +881,7 @@ function renderKasus(){const all=CASES0.concat(Object.values(store.data.cases).s
   $('kList').innerHTML=all.map(c=>{const p=PARTS.find(x=>x.id===c.partId)||{name:'(part dihapus)',kind:'bolt',photos:[]};const u=UNITS.find(x=>x.id===c.unitId)||{name:'?'};const th=c.builtin?CASE_FIND.concat(CASE_REF):[refThumbs(p)[0]];
     return `<div class="body" style="border-bottom:1px solid var(--line)"><div class="chips"><span class="chip on">${esc(u.name)} · No. ${esc(c.no)}</span><span class="chip">${esc(c.date)}</span><span class="chip">${esc(c.loc)}</span>${c.builtin?'<span class="chip ok">kasus asli</span>':''}</div><b>${esc(p.name)}</b><div class="hint">${esc(c.note)}</div><div class="angles" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr))">${th.map(s=>`<div class="ang"><img src="${s}" alt=""></div>`).join('')}</div></div>`}).join('')}
 function route(){const v=location.hash==='#database'?'database':location.hash==='#kasus'?'kasus':location.hash==='#data'?'data':'analisis';
-  $('v-analisis').hidden=v!=='analisis';$('v-database').hidden=v!=='database';$('v-kasus').hidden=v!=='kasus';$('v-data').hidden=v!=='data';
+  $('v-analisis').hidden=v!=='analisis';$('v-database').hidden=v!=='database';$('v-kasus').hidden=v!=='kasus';$('v-data').hidden=v!=='data';$('clBox').hidden=v!=='data';
   document.querySelectorAll('nav [data-view]').forEach(b=>b.setAttribute('aria-selected',b.dataset.view===v));
   if(v==='database')renderDB();if(v==='kasus')renderKasus();if(v==='data')renderData()}
 document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)location.hash=b.dataset.view});

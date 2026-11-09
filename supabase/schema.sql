@@ -43,16 +43,19 @@ create table if not exists field_submissions(
   payload jsonb not null, status text not null default 'pending' check (status in ('pending','approved','rejected')),
   created_at timestamptz default now(), reviewed_by text, reviewed_at timestamptz);
 
+-- Key/value info for the APK: data_version, catalog_meta, models, models_sig.
+create table if not exists meta(key text primary key, value text);
+
 -- Row Level Security: on for every table. No policy = no access for anon/authenticated.
 do $$ declare t text; begin
   foreach t in array array['units','unit_spec','parts','history','photos','inspections','cases','operations',
-                           'users','audit','field_submissions'] loop
+                           'users','audit','field_submissions','meta'] loop
     execute format('alter table %I enable row level security', t);
   end loop; end $$;
 
 -- Signed-in app users may READ catalog data (not users or audit).
 do $$ declare t text; begin
-  foreach t in array array['units','unit_spec','parts','history','photos','inspections','cases','operations'] loop
+  foreach t in array array['units','unit_spec','parts','history','photos','inspections','cases','operations','meta'] loop
     execute format('drop policy if exists "read_%1$s" on %1$I', t);
     execute format('create policy "read_%1$s" on %1$I for select to authenticated using (true)', t);
   end loop; end $$;
@@ -68,3 +71,9 @@ create policy "fs_read_own" on field_submissions for select to authenticated usi
 insert into storage.buckets(id, name, public) values ('ct-files', 'ct-files', false) on conflict (id) do nothing;
 drop policy if exists "ct_files_read" on storage.objects;
 create policy "ct_files_read" on storage.objects for select to authenticated using (bucket_id = 'ct-files');
+
+-- Signed-in users may upload photos only under submissions/<their user id>/ (the server copies approved ones).
+drop policy if exists "ct_files_submit" on storage.objects;
+create policy "ct_files_submit" on storage.objects for insert to authenticated
+  with check (bucket_id = 'ct-files' and (storage.foldername(name))[1] = 'submissions'
+              and (storage.foldername(name))[2] = auth.uid()::text);

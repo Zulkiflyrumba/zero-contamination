@@ -73,4 +73,13 @@ Katalog > Ekspor > **Siapkan paket data** membuat satu file `.ctpack` (zip): `ma
 4. Setiap perubahan (kasus, inspeksi, part, foto, akun, catatan aktivitas) dicatat lewat trigger dan dikirim ke Supabase. Kalau koneksi gagal, perubahan tetap antre dan dikirim pada perubahan berikutnya.
 5. Admin dapat memantau status, menarik data terbaru, atau mengirim ulang semua data di halaman **Pengguna > Cloud (Supabase)**.
 
-Tahap berikutnya (belum dibuat): login APK dan unduh pembaruan, antrean Pending Sync, dan persetujuan admin atas `field_submissions`.
+## Sinkronisasi APK dengan Supabase
+
+1. Jalankan ulang `supabase/schema.sql` (aman diulang). Skrip ini menambah tabel `meta` dan izin unggah foto lapangan.
+2. Buat akun APK di Supabase: **Authentication > Users > Add user** (email dan password, centang auto confirm). Satu akun per orang.
+3. Di APK: **Data Center > Sinkronisasi cloud**. Isi alamat server dan kunci **publishable** (bukan secret), lalu login.
+4. **Check for Updates** membandingkan versi data. **Tarik pembaruan** mengunduh data, foto, dan model 3D (yang sudah diunduh tidak diunduh ulang).
+5. Data yang dibuat di APK (kasus, inspeksi, foto referensi, riwayat) masuk antrean **Pending Sync** dan dikirim otomatis saat online, atau lewat tombol Kirim antrean. Isi kiriman hanya sampai ke tabel `field_submissions`.
+6. Admin menyetujui atau menolak kiriman di halaman **Persetujuan** di Streamlit. Yang disetujui masuk ke data utama dan terbawa ke semua APK pada penarikan berikutnya.
+
+Catatan: data lokal APK yang sudah dikirim tetap tampil di perangkat itu bersama data hasil tarikan, jadi satu kasus bisa terlihat ganda sampai data lokalnya dihapus. Paket `.ctpack` tetap bisa dipakai sebagai cadangan tanpa internet.

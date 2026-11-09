@@ -43,17 +43,30 @@ class Fake(BaseHTTPRequestHandler):
             return self._send(200, Fake.files[name]) if name in Fake.files else self._send(404)
         t = u.path.rsplit("/", 1)[1]
         tab = Fake.tables.setdefault(t, {})
-        pk = cloud.TABLES[t]
+        pk = cloud.pk(t)
+        flt = {k: v[0] for k, v in q.items() if v[0].startswith(("eq.", "neq."))}
+
+        def match(r):
+            for c, v in flt.items():
+                ok = str(r.get(c)) == v.split(".", 1)[1]
+                if ok == v.startswith("neq."):
+                    return False
+            return True
+
+        if method == "PATCH":
+            for r in tab.values():
+                if match(r):
+                    r.update(json.loads(self._body()))
+            return self._send(204)
         if method == "POST":
             for r in json.loads(self._body()):
                 tab[tuple(r[c] for c in pk)] = r
             return self._send(201)
         if method == "DELETE":
-            want = {k: v[0][3:] for k, v in q.items()}
-            for k in [k for k, r in tab.items() if all(str(r[c]) == v for c, v in want.items())]:
+            for k in [k for k, r in tab.items() if match(r)]:
                 del tab[k]
             return self._send(204)
-        rows = list(tab.values())
+        rows = [r for r in tab.values() if match(r)]
         off, lim = int(q.get("offset", ["0"])[0]), int(q.get("limit", ["1000"])[0])
         return self._send(200, json.dumps(rows[off:off + lim]).encode())
 
@@ -62,6 +75,9 @@ class Fake(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self._handle("POST")
+
+    def do_PATCH(self):
+        self._handle("PATCH")
 
     def do_DELETE(self):
         self._handle("DELETE")
@@ -156,3 +172,77 @@ def test_photo_files_roundtrip(fake, tmp_path, monkeypatch):
     monkeypatch.setenv("CT_DB_PATH", str(tmp_path / "c.db"))
     db.init_db()
     assert (tmp_path / "photos" / name).exists()
+
+
+def _sub(kind, payload, sid="11111111-1111-1111-1111-111111111111", device="hp-lapangan"):
+    Fake.tables.setdefault("field_submissions", {})[(sid,)] = {
+        "id": sid, "device_id": device, "kind": kind, "payload": payload, "status": "pending",
+        "created_at": "2026-11-09T10:00:00Z"}
+    return Fake.tables["field_submissions"][(sid,)]
+
+
+def test_version_and_static_published(fake, tmp_path, monkeypatch):
+    monkeypatch.setenv("CT_DB_PATH", str(tmp_path / "a.db"))
+    db.init_db()
+    meta = {k[0]: r["value"] for k, r in Fake.tables["meta"].items()}
+    assert meta["data_version"] and json.loads(meta["catalog_meta"])["fleet"]
+    v1 = meta["data_version"]
+    import time
+
+    time.sleep(1.1)
+    db.add_case("2026-11-09", "PIT", "hd785", "p1", "512", "x")
+    assert Fake.tables["meta"][("data_version",)]["value"] > v1
+
+
+def test_approve_case_and_inspection(fake, tmp_path, monkeypatch):
+    from core import submissions as sm
+
+    monkeypatch.setenv("CT_DB_PATH", str(tmp_path / "a.db"))
+    db.init_db()
+    pid = db.list_parts()[0]["id"]
+    s1 = _sub("case", {"date": "2026-11-09", "loc": "ROM", "partId": pid, "no": "512", "note": "<b>x</b>"})
+    assert sm.list_pending()[0]["id"] == s1["id"]
+    sm.approve(s1, "qc")
+    assert any("<b>x</b>" in c["note"] and "hp-lapangan" in c["note"] for c in db.list_cases())
+    assert s1["status"] == "approved" and s1["reviewed_by"] == "qc" and not sm.list_pending()
+    s2 = _sub("inspection", {"date": "2026-11-09", "partId": pid, "no": "512", "status": "rusak"}, sid="2" * 8 + "-2222-2222-2222-222222222222")
+    sm.approve(s2, "qc")
+    assert any(r["status"] == "rusak" and r["lambung"] == "512" for r in db.list_inspections())
+
+
+def test_invalid_submissions_rejected(fake, tmp_path, monkeypatch):
+    from core import submissions as sm
+
+    monkeypatch.setenv("CT_DB_PATH", str(tmp_path / "a.db"))
+    db.init_db()
+    pid = db.list_parts()[0]["id"]
+    bad = [
+        _sub("case", {"date": "kemarin", "loc": "ROM", "partId": pid, "no": "1"}),
+        _sub("case", {"date": "2026-11-09", "partId": "tidak-ada", "no": "1"}),
+        _sub("inspection", {"date": "2026-11-09", "partId": pid, "no": "1", "status": "hancur"}),
+        _sub("history", {"date": "2026-11-09", "partId": pid, "hm": {"x": 1}}),
+        _sub("photo", {"partId": pid, "files": ["../../etc/passwd"]}),
+        _sub("photo", {"partId": pid, "files": []}),
+        _sub("bom", {}),
+    ]
+    for b in bad:
+        with pytest.raises(ValueError):
+            sm.apply(b)
+    assert not db.list_cases()[-1]["note"].startswith("[lapangan")
+
+
+def test_approve_photo_from_storage(fake, tmp_path, monkeypatch):
+    from core import submissions as sm
+
+    monkeypatch.setenv("CT_DB_PATH", str(tmp_path / "a.db"))
+    db.init_db()
+    pid = db.list_parts()[0]["id"]
+    buf = io.BytesIO()
+    Image.new("RGB", (30, 30), "blue").save(buf, "JPEG")
+    path = "submissions/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/f1.jpg"
+    Fake.files[path] = buf.getvalue()
+    sm.approve(_sub("photo", {"partId": pid, "files": [path]}), "qc")
+    assert any(f"photos/{pid}_ref" in k for k in Fake.files)
+    Fake.files["submissions/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/bad.jpg"] = b"bukan gambar"
+    with pytest.raises(ValueError):
+        sm.apply(_sub("photo", {"partId": pid, "files": ["submissions/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/bad.jpg"]}))

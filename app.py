@@ -38,6 +38,7 @@ catalog_pages = {
     "parts3d": st.Page("views/parts3d.py", title="Galeri part 3D", icon=":material/view_in_ar:"),
     "catalog": st.Page("views/catalog.py", title="Katalog", icon=":material/inventory_2:"),
     "cases": st.Page("views/cases.py", title="Inspeksi & Kasus", icon=":material/fact_check:"),
+    "approvals": st.Page("views/approvals.py", title="Persetujuan", icon=":material/task_alt:"),
     "users": st.Page("views/users.py", title="Pengguna", icon=":material/group:"),
     "about": st.Page("views/about.py", title="Tentang", icon=":material/info:"),
 }
